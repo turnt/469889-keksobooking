@@ -1,7 +1,7 @@
 # Личный проект «Кексобукинг» [![Build status][travis-image]][travis-url]
 
-* Студент: [Неопознанный енот](https://up.htmlacademy.ru/javascript/13/user/469889).
-* Наставник: `Неизвестно`.
+* Студент: [Антон](https://up.htmlacademy.ru/javascript/13/user/469889).
+* Наставник: `Магомед Кандаев`.
 
 ---
 
