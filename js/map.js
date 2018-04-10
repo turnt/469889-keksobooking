@@ -1,5 +1,5 @@
 'use strict';
-// props from task
+// estate props from task
 var estateProps = {
   numberOfObjects: 8,
 
@@ -106,23 +106,30 @@ var getValueFromLimits = function (arr) {
   return value;
 };
 
-// return array with multiple values from shuffled array
-var getMultipleRandomArrayItems = function (arr) {
+/**
+  * return array with multiple values from array
+  * and shuffle it if straight is undefined or false
+*/
+var getMultipleRandomArrayItems = function (arr, straight) {
   var items = [];
-  var randomArray = shuffleArray(arr);
-  var randomLength = Math.ceil(Math.random() * randomArray.length);
+  var resultArray = straight ? arr.slice() : shuffleArray(arr);
+  var randomLength = Math.ceil(Math.random() * resultArray.length);
 
   for (var i = 0; i < randomLength; i += 1) {
-    items.push(randomArray[i]);
+    items.push(resultArray[i]);
   }
 
   return items;
 };
 
-var generateTwoDigitNumberArray = function (num) {
+// return shuffled array of two-digit numbers from range
+var generateTwoDigitNumberArray = function (arr) {
   var array = [];
+  var range = arr.slice();
 
-  for (var i = 1; i <= num; i += 1) {
+  range.sort(sortAscendant);
+
+  for (var i = range[0]; i <= range[1]; i += 1) {
     var value = '0' + i;
     array.push(value.slice(-2));
   }
@@ -130,18 +137,31 @@ var generateTwoDigitNumberArray = function (num) {
   return shuffleArray(array);
 };
 
+// return array of urls for avatars
+var generateAvatarUrls = function (arr) {
+  var urls = [];
+
+  for (var i = 0, length = arr.length; i < length; i += 1) {
+    var url = 'img/avatars/user' + arr[i] + '.png';
+    urls.push(url);
+  }
+
+  return urls;
+};
+
 // generate array of adverts
 var generateArrayOfAdverts = function (props) {
   var adverts = [];
   var advertsLength = props.numberOfObjects;
   var titles = shuffleArray(props.offer.titles);
-  var urlDigits = generateTwoDigitNumberArray(advertsLength);
+  var digits = generateTwoDigitNumberArray(props.author.avatarIndexLimits);
+  var urls = generateAvatarUrls(digits);
 
   for (var i = 0; i < advertsLength; i += 1) {
     var advert = {};
 
     advert.author = {};
-    advert.author.avatar = 'img/avatars/user' + urlDigits[i] + '.png';
+    advert.author.avatar = urls[i];
 
     advert.location = {};
     advert.location.x = getValueFromLimits(props.locationCoordinates.x);
@@ -159,7 +179,7 @@ var generateArrayOfAdverts = function (props) {
     advert.offer.checkin = getRandomArrayItem(props.offer.checkinTimes);
     advert.offer.checkout = getRandomArrayItem(props.offer.checkoutTimes);
 
-    advert.offer.features = getMultipleRandomArrayItems(props.offer.features);
+    advert.offer.features = getMultipleRandomArrayItems(props.offer.features, true);
     advert.offer.description = props.offer.description;
     advert.offer.photos = shuffleArray(props.offer.photosUrls);
 
@@ -169,4 +189,51 @@ var generateArrayOfAdverts = function (props) {
   return adverts;
 };
 
-console.log(generateArrayOfAdverts(estateProps));
+// remove hidden class
+var removeHiddenFromNode = function (ctx, selector) {
+  var hiddenClass = selector || 'hidden';
+  ctx.classList.remove(hiddenClass);
+};
+
+// get element by selector from document or optional block
+var getNodeBySelector = function (target, node) {
+  // get context
+  var ctx = node || document;
+
+  return ctx.querySelector(target);
+};
+
+// render pins to target node filled with template
+var renderPins = function (adverts, template, target) {
+  var fragment = document.createDocumentFragment();
+
+  for (var i = 0; i < adverts.length; i++) {
+    fragment.appendChild(createPin(adverts[i], template));
+  }
+
+  target.appendChild(fragment);
+};
+
+// create pin with template
+var createPin = function (advert, template) {
+  var pin = template.cloneNode(true);
+  var pinImg = getNodeBySelector('img', pin);
+
+  pin.style.left = advert.location.x - pin.style.width / 2 + 'px';
+  pin.style.top = advert.location.y - pin.style.height + 'px';
+
+  pinImg.src = advert.author.avatar;
+  pinImg.alt = advert.offer.title;
+
+  return pin;
+};
+
+var adverts = generateArrayOfAdverts(estateProps);
+var map = getNodeBySelector('.map');
+removeHiddenFromNode(map, 'map--faded');
+
+var template = getNodeBySelector('template');
+var pinTemplate = getNodeBySelector('.map__pin', template.content);
+var pinsNode = getNodeBySelector('.map__pins');
+
+renderPins(adverts, pinTemplate, pinsNode);
