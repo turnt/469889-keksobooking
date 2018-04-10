@@ -75,7 +75,7 @@ var shuffleArray = function (arr) {
   }
 
   return shuffledArray;
-}
+};
 
 // return random value from array
 var getRandomArrayItem = function (arr) {
@@ -85,7 +85,7 @@ var getRandomArrayItem = function (arr) {
 // ascendant sorting rule
 var sortAscendant = function (a, b) {
   return a - b;
-}
+};
 
 // return random value from range
 var getValueFromLimits = function (arr) {
@@ -104,7 +104,7 @@ var getValueFromLimits = function (arr) {
   }
 
   return value;
-}
+};
 
 // return array with multiple values from shuffled array
 var getMultipleRandomArrayItems = function (arr) {
@@ -119,17 +119,29 @@ var getMultipleRandomArrayItems = function (arr) {
   return items;
 };
 
+var generateTwoDigitNumberArray = function (num) {
+  var array = [];
+
+  for (var i = 1; i <= num; i += 1) {
+    var value = '0' + i;
+    array.push(value.slice(-2));
+  }
+
+  return shuffleArray(array);
+};
+
 // generate array of adverts
 var generateArrayOfAdverts = function (props) {
   var adverts = [];
   var advertsLength = props.numberOfObjects;
   var titles = shuffleArray(props.offer.titles);
+  var urlDigits = generateTwoDigitNumberArray(advertsLength);
 
   for (var i = 0; i < advertsLength; i += 1) {
     var advert = {};
 
     advert.author = {};
-    advert.author.avatar = 'img/avatars/user0' + (i + 1) + '.png'; // как-то бы интереснее сделать генерацию
+    advert.author.avatar = 'img/avatars/user' + urlDigits[i] + '.png';
 
     advert.location = {};
     advert.location.x = getValueFromLimits(props.locationCoordinates.x);
@@ -155,6 +167,6 @@ var generateArrayOfAdverts = function (props) {
   }
 
   return adverts;
-}
+};
 
 console.log(generateArrayOfAdverts(estateProps));
