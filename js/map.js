@@ -62,7 +62,7 @@ var estateProps = {
 // return new shuffled array
 var shuffleArray = function (arr) {
   var shuffledArray = arr.slice();
-  var counter = shuffledArray.lenght;
+  var counter = shuffledArray.length;
 
   while (counter > 0) {
     var index = Math.floor(Math.random() * counter);
@@ -82,14 +82,25 @@ var getRandomArrayItem = function (arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 };
 
+// ascendant sorting rule
+var sortAscendant = function (a, b) {
+  return a - b;
+}
+
+// return random value from range
 var getValueFromLimits = function (arr) {
-  var length = arr.length;
+  var range = arr.slice();
+  var length = range.length;
   var value = 100500; // by default for empty array
 
+  range.sort(sortAscendant);
+
   if (length === 1) {
-    value = arr[0];
+    value = range[0];
   } else if (length > 1) {
-    value = arr[0] + Math.floor(Math.random() * (arr[length - 1] - arr[0]));
+    // addition is the random value from 0 to difference between last and first element
+    var addition = Math.floor(Math.random() * (range[length - 1] - range[0]));
+    value = range[0] + addition;
   }
 
   return value;
@@ -111,9 +122,10 @@ var getMultipleRandomArrayItems = function (arr) {
 // generate array of adverts
 var generateArrayOfAdverts = function (props) {
   var adverts = [];
+  var advertsLength = props.numberOfObjects;
   var titles = shuffleArray(props.offer.titles);
 
-  for (var i = 0, length = props.numberOfObjects; i < length; i += 1) {
+  for (var i = 0; i < advertsLength; i += 1) {
     var advert = {};
 
     advert.author = {};
@@ -128,6 +140,7 @@ var generateArrayOfAdverts = function (props) {
     advert.offer.address = advert.location.x + ', ' + advert.location.y;
     advert.offer.price = getValueFromLimits(props.offer.priceLimits);
     advert.offer.type = getRandomArrayItem(props.offer.types);
+
     advert.offer.rooms = getValueFromLimits(props.offer.roomsLimits);
     advert.offer.guests = getValueFromLimits(props.offer.guestsLimits);
 
@@ -144,4 +157,4 @@ var generateArrayOfAdverts = function (props) {
   return adverts;
 }
 
-generateArrayOfAdverts(estateProps);
+console.log(generateArrayOfAdverts(estateProps));
