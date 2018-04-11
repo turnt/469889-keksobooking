@@ -106,10 +106,8 @@ var getValueFromLimits = function (arr) {
   return value;
 };
 
-/**
-  * return array with multiple values from array
-  * and shuffle it if straight is undefined or false
-*/
+// Array with multiple values from array
+// and shuffle it if straight is undefined or false
 var getMultipleRandomArrayItems = function (arr, straight) {
   var items = [];
   var resultArray = straight ? arr.slice() : shuffleArray(arr);
@@ -317,7 +315,7 @@ var generateFeatures = function (ctx, features) {
 
     // check if child node classname contains feature
     for (var j = 0; j < features.length; j += 1) {
-      if (classValue.indexOf(features[j]) != -1) {
+      if (classValue.indexOf(features[j]) !== -1) {
         inFeatures = true;
       }
     }
@@ -332,7 +330,15 @@ var generateFeatures = function (ctx, features) {
 
 // return suffix for rooms number
 var roomsSuffix = function (num) {
-  return num === 1 ? 'а' : num < 5 ? 'ы' : '';
+  var letter = 'a';
+
+  if (num < 5 && num !== 1) {
+    letter = 'ы';
+  } else if (num > 5) {
+    letter = '';
+  }
+
+  return letter;
 };
 
 // return suffix for guests number
