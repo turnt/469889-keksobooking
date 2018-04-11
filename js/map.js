@@ -150,13 +150,12 @@ var generateAvatarUrls = function (arr) {
 // return array of generated adverts
 var generateArrayOfAdverts = function (props) {
   var adverts = [];
-  var advertsLength = props.numberOfObjects;
   var titles = shuffleArray(props.offer.titles);
 
   var digits = generateTwoDigitNumberArray(props.author.avatarIndexLimits);
   var urls = generateAvatarUrls(digits);
 
-  for (var i = 0; i < advertsLength; i += 1) {
+  for (var i = 0, length = props.numberOfObjects; i < length; i += 1) {
     adverts.push(generateAdvertItem(props, titles[i], urls[i]));
   }
 
@@ -211,7 +210,7 @@ var getNodeBySelector = function (target, node) {
 var renderPins = function (adverts, template, target) {
   var fragment = document.createDocumentFragment();
 
-  for (var i = 0; i < adverts.length; i++) {
+  for (var i = 0, length = adverts.length; i < length; i++) {
     fragment.appendChild(createPin(adverts[i], template));
   }
 
@@ -309,12 +308,12 @@ var generateCardPhoto = function (ctx, selector, counter, offer) {
 var generateFeatures = function (ctx, features) {
   var childNodes = ctx.childNodes;
 
-  for (var i = 0; i < childNodes.length; i += 1) {
+  for (var i = 0, length = childNodes.length; i < length; i += 1) {
     var inFeatures = false;
     var classValue = childNodes[i].classList ? childNodes[i].classList.value : '';
 
     // check if child node classname contains feature
-    for (var j = 0; j < features.length; j += 1) {
+    for (var j = 0, length = features.length; j < length; j += 1) {
       if (classValue.indexOf(features[j]) !== -1) {
         inFeatures = true;
       }
