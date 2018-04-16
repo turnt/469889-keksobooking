@@ -345,6 +345,25 @@ var guestsSuffix = function (num) {
   return (num % 20 === 1) || (num % 10 === 1) && (num % 100 !== 11) ? 'я' : 'ей';
 };
 
+// add disabled attribute for collection
+var disableNodes = function (ctx) {
+  for (var i = 0, length = ctx.length; i < length; i += 1) {
+    ctx[i].disabled = true;
+  }
+};
+
+// disable form elements
+var disableForm = function () {
+  var adForm = getNodeBySelector('.ad-form');
+  var adFormInputs = adForm.querySelectorAll('input');
+  var adFormSelects = adForm.querySelectorAll('select');
+  var adFormTextareas = adForm.querySelectorAll('select');
+
+  disableNodes(adFormInputs);
+  disableNodes(adFormSelects);
+  disableNodes(adFormTextareas);
+};
+
 var adverts = generateArrayOfAdverts(estateProps);
 
 var map = getNodeBySelector('.map');
@@ -354,6 +373,6 @@ var pinTemplate = getNodeBySelector('.map__pin', template.content);
 var pinsNode = getNodeBySelector('.map__pins');
 var cardTemplate = getNodeBySelector('.map__card', template.content);
 
-removeHiddenFromNode(map, 'map--faded');
 renderPins(adverts, pinTemplate, pinsNode);
 renderCard(adverts[0], cardTemplate, map);
+disableForm();
