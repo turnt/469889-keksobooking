@@ -273,6 +273,7 @@ var renderCard = function (props, template, target) {
 // remove card card from parent node and set current cardIndex to -1
 var removeCardFromMap = function (ctx) {
   ctx.parentNode.removeChild(ctx);
+  cardId = null;
 };
 
 // create pin with template
@@ -436,7 +437,6 @@ var enableAdForm = function () {
 
   renderPins(adverts, pinTemplate, pinsNode);
   var pins = pinsNode.querySelectorAll('.map__pin:not(.map__pin--main)');
-  var cardId = -1;
 
   for (var i = 0, length = pins.length; i < length; i += 1) {
     pins[i].addEventListener('click', function (e) {
@@ -490,4 +490,5 @@ var cardTemplate = getNodeBySelector('.map__card', template.content);
 var adForm = getNodeBySelector('.ad-form');
 
 disableAdForm(formElementsTypes, adForm);
+var cardId = null;
 var mainPinAd = generateMainPinAd(estateProps, '.map__pin--main', pinsNode);
