@@ -305,7 +305,7 @@ var createCard = function (advert, template) {
 
   var onEnterRemoveCard = function (e) {
     if (e.keyCode === keycodes.enter) {
-      removeCardFromMap();
+      removeCardFromMap(card);
     }
   };
 
