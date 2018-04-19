@@ -1,4 +1,8 @@
 'use strict';
+var keycodes = {
+  esc: 27,
+  enter: 13,
+};
 // estate props from task
 var estateProps = {
   numberOfObjects: 8,
@@ -58,6 +62,18 @@ var estateProps = {
     y: [150, 500],
   }
 };
+// types of controls in ad form
+var formElementsTypes = [
+  'input',
+  'select',
+  'textarea',
+  'button',
+];
+// pins props
+var pinsProps = {
+  width: 50,
+  height: 70,
+};
 
 // return new shuffled array
 var shuffleArray = function (arr) {
@@ -98,7 +114,8 @@ var getValueFromLimits = function (arr) {
   if (length === 1) {
     value = range[0];
   } else if (length > 1) {
-    // addition is the random value from 0 to difference between last and first element
+    // addition is the random value from 0 to difference
+    // between last and first element
     var addition = Math.floor(Math.random() * (range[length - 1] - range[0]));
     value = range[0] + addition;
   }
@@ -156,15 +173,17 @@ var generateArrayOfAdverts = function (props) {
   var urls = generateAvatarUrls(digits);
 
   for (var i = 0, length = props.numberOfObjects; i < length; i += 1) {
-    adverts.push(generateAdvertItem(props, titles[i], urls[i]));
+    adverts.push(generateAdvertItem(props, i, titles[i], urls[i]));
   }
 
   return adverts;
 };
 
 // return generated advert
-var generateAdvertItem = function (props, title, url) {
+var generateAdvertItem = function (props, id, title, url) {
   var advert = {};
+
+  advert.id = id;
 
   advert.author = {};
   advert.author.avatar = url;
@@ -185,7 +204,10 @@ var generateAdvertItem = function (props, title, url) {
   advert.offer.checkin = getRandomArrayItem(props.offer.checkinTimes);
   advert.offer.checkout = getRandomArrayItem(props.offer.checkoutTimes);
 
-  advert.offer.features = getMultipleRandomArrayItems(props.offer.features, true);
+  advert.offer.features = getMultipleRandomArrayItems(
+      props.offer.features,
+      true
+  );
   advert.offer.description = props.offer.description;
   advert.offer.photos = shuffleArray(props.offer.photosUrls);
 
@@ -195,6 +217,7 @@ var generateAdvertItem = function (props, title, url) {
 // remove hidden class
 var removeHiddenFromNode = function (ctx, selector) {
   var hiddenClass = selector || 'hidden';
+
   ctx.classList.remove(hiddenClass);
 };
 
@@ -222,8 +245,9 @@ var createPin = function (advert, template) {
   var pin = template.cloneNode(true);
   var pinImg = getNodeBySelector('img', pin);
 
-  pin.style.left = advert.location.x - Math.floor(pin.style.width / 2) + 'px';
-  pin.style.top = advert.location.y - pin.style.height + 'px';
+  pin.advertId = advert.id;
+  pin.style.left = advert.location.x - Math.round(pinsProps.width / 2) + 'px';
+  pin.style.top = advert.location.y - Math.round(pinsProps.height / 2) + 'px';
 
   pinImg.src = advert.author.avatar;
   pinImg.alt = advert.offer.title;
@@ -235,10 +259,21 @@ var createPin = function (advert, template) {
 var renderCard = function (props, template, target) {
   var fragment = document.createDocumentFragment();
   var filterNode = getNodeBySelector('.map__filters-container', target);
+  var oldPopupCard = getNodeBySelector('.map__card', target);
 
   fragment.appendChild(createCard(props, template));
 
+  if (oldPopupCard) {
+    target.removeChild(oldPopupCard);
+  }
+
   target.insertBefore(fragment, filterNode);
+};
+
+// remove card card from parent node and set current cardIndex to -1
+var removeCardFromMap = function (ctx) {
+  ctx.parentNode.removeChild(ctx);
+  cardId = null;
 };
 
 // create pin with template
@@ -267,6 +302,21 @@ var createCard = function (advert, template) {
     bungalo: 'Бунгало',
   };
 
+  var cardClose = getNodeBySelector('.popup__close', card);
+
+  var onEnterRemoveCard = function (e) {
+    if (e.keyCode === keycodes.enter) {
+      removeCardFromMap(card);
+    }
+  };
+
+  var onClickRemoveCard = function () {
+    removeCardFromMap(card);
+  };
+
+  cardClose.addEventListener('keydown', onEnterRemoveCard);
+  cardClose.addEventListener('click', onClickRemoveCard);
+
   cardAvatar.src = advert.author.avatar;
   cardTitle.textContent = advert.offer.title;
   cardAddress.textContent = advert.offer.address;
@@ -275,16 +325,20 @@ var createCard = function (advert, template) {
 
   roomsText += roomsSuffix(advert.offer.rooms);
   guestsText += guestsSuffix(advert.offer.guests);
-  cardCapacity.textContent = advert.offer.rooms + ' ' + roomsText + ' для ' + advert.offer.guests + ' ' + guestsText;
+  cardCapacity.textContent = advert.offer.rooms + ' ' + roomsText +
+      ' для ' + advert.offer.guests + ' ' + guestsText;
 
-  cardCheckInOut.textContent = 'Заезд после ' + advert.offer.checkin + ', выезд до ' + advert.offer.checkout;
+  cardCheckInOut.textContent = 'Заезд после ' + advert.offer.checkin +
+      ', выезд до ' + advert.offer.checkout;
 
   cardDescription.textContent = advert.offer.description;
 
   generateFeatures(cardFeatures, advert.offer.features);
 
   for (var i = 0; i < advert.offer.photos.length; i += 1) {
-    cardImages.appendChild(generateCardPhoto(card, '.popup__photo', i, advert.offer));
+    cardImages.appendChild(
+        generateCardPhoto(card, '.popup__photo', i, advert.offer)
+    );
   }
 
   return card;
@@ -310,19 +364,22 @@ var generateFeatures = function (ctx, features) {
 
   for (var i = 0, length = childNodes.length; i < length; i += 1) {
     var inFeatures = false;
-    var classValue = childNodes[i].classList ? childNodes[i].classList.value : '';
+    var classValue = '';
+    if (childNodes[i] && childNodes[i].classList) {
+      classValue = childNodes[i].classList.value;
 
-    // check if child node classname contains feature
-    for (var j = 0, length = features.length; j < length; j += 1) {
-      if (classValue.indexOf(features[j]) !== -1) {
-        inFeatures = true;
+      // check if child node classname contains feature
+      for (var j = 0; j < features.length; j += 1) {
+        if (classValue.indexOf(features[j]) !== -1) {
+          inFeatures = true;
+        }
       }
-    }
 
-    // remove node if not contains
-    if (!inFeatures) {
-      ctx.removeChild(childNodes[i]);
-      i -= 1;
+      // remove node if not contains
+      if (!inFeatures) {
+        ctx.removeChild(childNodes[i]);
+        i -= 1;
+      }
     }
   }
 };
@@ -342,7 +399,83 @@ var roomsSuffix = function (num) {
 
 // return suffix for guests number
 var guestsSuffix = function (num) {
-  return (num % 20 === 1) || (num % 10 === 1) && (num % 100 !== 11) ? 'я' : 'ей';
+  return (num % 20 === 1) ||
+      (num % 10 === 1) && (num % 100 !== 11) ? 'я' : 'ей';
+};
+
+// add disabled attribute for collection
+var disableNodes = function (ctx, reverse) {
+  for (var i = 0, length = ctx.length; i < length; i += 1) {
+    if (reverse) {
+      ctx[i].disabled = false;
+    } else {
+      ctx[i].disabled = true;
+    }
+  }
+};
+
+var disableFormElementsByType = function (ctx, type, reverse) {
+  var formElements = ctx.querySelectorAll(type);
+
+  disableNodes(formElements, reverse);
+};
+
+// disable form elements
+var disableAdForm = function (types, form, reverse) {
+  for (var i = 0, length = types.length; i < length; i += 1) {
+    disableFormElementsByType(form, types[i], reverse);
+  }
+};
+
+// enable form elements
+var enableAdForm = function () {
+  var mainPin = getNodeBySelector('.map__pin--main');
+
+  disableAdForm(formElementsTypes, adForm, true);
+  removeHiddenFromNode(map, 'map--faded');
+  adForm.classList.remove('ad-form--disabled');
+
+  renderPins(adverts, pinTemplate, pinsNode);
+  var pins = pinsNode.querySelectorAll('.map__pin:not(.map__pin--main)');
+
+  for (var i = 0, length = pins.length; i < length; i += 1) {
+    pins[i].addEventListener('click', function (e) {
+      var pin = e.currentTarget;
+      if (pin.advertId !== cardId) {
+        cardId = pin.advertId;
+
+        renderCard(adverts[cardId], cardTemplate, map);
+      }
+    });
+  }
+
+  fillFormAddress(adForm, mainPinAd.offer.address);
+
+  mainPin.removeEventListener('mouseup', enableAdForm);
+};
+
+// generate mainPin ad draft
+var generateMainPinAd = function (props, selector, ctx) {
+  var mainPin = getNodeBySelector(selector, ctx);
+  var mainPinAvatar = 'img/muffin-red.svg';
+  var mainPinTitle = getRandomArrayItem(props.offer.titles);
+  var mainPinAd = generateAdvertItem(props, null, mainPinTitle, mainPinAvatar);
+
+  mainPinAd.location.x = parseInt(mainPin.style.left, 10) +
+    Math.floor(mainPin.offsetWidth / 2);
+  mainPinAd.location.y = parseInt(mainPin.style.top, 10) + mainPin.offsetHeight;
+  mainPinAd.offer.address = mainPinAd.location.x + ', ' + mainPinAd.location.y;
+
+  mainPin.addEventListener('mouseup', enableAdForm);
+
+  return mainPinAd;
+};
+
+// fill form address
+var fillFormAddress = function (ctx, address) {
+  var addressInput = getNodeBySelector('input[name=address]', ctx);
+
+  addressInput.value = address;
 };
 
 var adverts = generateArrayOfAdverts(estateProps);
@@ -354,6 +487,8 @@ var pinTemplate = getNodeBySelector('.map__pin', template.content);
 var pinsNode = getNodeBySelector('.map__pins');
 var cardTemplate = getNodeBySelector('.map__card', template.content);
 
-removeHiddenFromNode(map, 'map--faded');
-renderPins(adverts, pinTemplate, pinsNode);
-renderCard(adverts[0], cardTemplate, map);
+var adForm = getNodeBySelector('.ad-form');
+
+disableAdForm(formElementsTypes, adForm);
+var cardId = null;
+var mainPinAd = generateMainPinAd(estateProps, '.map__pin--main', pinsNode);
