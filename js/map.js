@@ -62,13 +62,7 @@ var estateProps = {
     y: [150, 500],
   }
 };
-// types of controls in ad form
-var formElementsTypes = [
-  'input',
-  'select',
-  'textarea',
-  'button',
-];
+
 // pins props
 var pinsProps = {
   width: 50,
@@ -205,8 +199,7 @@ var generateAdvertItem = function (props, id, title, url) {
   advert.offer.checkout = getRandomArrayItem(props.offer.checkoutTimes);
 
   advert.offer.features = getMultipleRandomArrayItems(
-      props.offer.features,
-      true
+      props.offer.features
   );
   advert.offer.description = props.offer.description;
   advert.offer.photos = shuffleArray(props.offer.photosUrls);
@@ -271,7 +264,7 @@ var renderCard = function (props, template, target) {
 };
 
 // remove card card from parent node and set current cardIndex to -1
-var removeCardFromMap = function (ctx) {
+var removeNodeFromParent = function (ctx) {
   ctx.parentNode.removeChild(ctx);
   cardId = null;
 };
@@ -306,12 +299,12 @@ var createCard = function (advert, template) {
 
   var onEnterRemoveCard = function (e) {
     if (e.keyCode === keycodes.enter) {
-      removeCardFromMap(card);
+      removeNodeFromParent(card);
     }
   };
 
   var onClickRemoveCard = function () {
-    removeCardFromMap(card);
+    removeNodeFromParent(card);
   };
 
   cardClose.addEventListener('keydown', onEnterRemoveCard);
@@ -486,9 +479,239 @@ var template = getNodeBySelector('template');
 var pinTemplate = getNodeBySelector('.map__pin', template.content);
 var pinsNode = getNodeBySelector('.map__pins');
 var cardTemplate = getNodeBySelector('.map__card', template.content);
-
-var adForm = getNodeBySelector('.ad-form');
-
-disableAdForm(formElementsTypes, adForm);
 var cardId = null;
+
 var mainPinAd = generateMainPinAd(estateProps, '.map__pin--main', pinsNode);
+
+/*  validation rules */
+
+// types of controls in ad form
+var formElementsTypes = [
+  'input[type=file]',
+  'input[type=text]',
+  'input[type=checkbox]',
+  'input[type=number]',
+  'select',
+  'textarea',
+  'button',
+];
+// validation props
+var validationProps = {
+  types: {
+    palace: 10000,
+    house: 5000,
+    flat: 1000,
+    bungalo: 0,
+  },
+};
+
+// recieve array of required elements
+var requiredControls = formElementsTypes.filter(function (value) {
+  return value !== 'textarea' &&
+      value !== 'input[type=checkbox]' &&
+      value !== 'input[type=file]';
+});
+
+var fillRequiredContols = function (ctx, reverse) {
+  for (var i = 0, length = ctx.length; i < length; i += 1) {
+    if (reverse) {
+      ctx[i].required = false;
+    } else {
+      ctx[i].required = true;
+    }
+  }
+};
+
+var requiredFormElementsByType = function (ctx, types, reverse) {
+  for (var i = 0, length = types.length; i < length; i += 1) {
+    var formElements = ctx.querySelectorAll(types);
+
+    fillRequiredContols(formElements, reverse);
+  }
+};
+
+var validatePrice = function (priceNode) {
+  var errorMsg = '';
+
+  if (priceNode.value) {
+    var tooSmall = +priceNode.value < priceNode.min;
+    var tooBig = +priceNode.value > priceNode.max;
+
+    if (tooSmall || tooBig) {
+      errorMsg = 'Цена должна быть от ' +
+          priceNode.min + ' до ' + priceNode.max + '₽';
+    }
+  }
+
+  setValidationMsg(priceNode, errorMsg);
+};
+
+// set validation message for context node
+var setValidationMsg = function (ctx, msg) {
+  var errorMsg = msg || '';
+
+  ctx.setCustomValidity(errorMsg);
+};
+
+var priceMinimum = function (ctx, min) {
+  ctx.min = min;
+  ctx.placeholder = 'от ' + min;
+};
+
+// validate time in and out by time
+var validateTimeInOut = function (ctx, time) {
+  var errorMsg = '';
+  var chosenOption = ctx.querySelector('option[value="' + ctx.value + '"]');
+
+  disableTimeOutChildNodes(ctx, time);
+
+  if (chosenOption.disabled) {
+    errorMsg = 'Время выезда должно быть равно или позднее заезда';
+  }
+
+  setValidationMsg(ctx, errorMsg);
+};
+
+// disable time out options by value
+var disableTimeOutChildNodes = function (ctx, value) {
+  var children = ctx.querySelectorAll('option');
+
+  for (var i = 0, length = children.length; i < length; i += 1) {
+    timeOutDisabledRule(children[i], value);
+  }
+};
+
+// time out rule for disabled options
+var timeOutDisabledRule = function (ctx, value) {
+  if (ctx.value < value) {
+    ctx.disabled = true;
+  } else {
+    ctx.disabled = false;
+  }
+};
+
+// disable capacity options by value
+var disableCapacityChildNodes = function (ctx, value) {
+  var children = ctx.querySelectorAll('option');
+
+  for (var i = 0, length = children.length; i < length; i += 1) {
+    capacityDisabledRule(children[i], value);
+  }
+};
+
+// capacity rule for disabled options
+var capacityDisabledRule = function (ctx, value) {
+  if (value !== 100) {
+    if (+ctx.value === 0 || +ctx.value > value) {
+      ctx.disabled = true;
+    } else {
+      ctx.disabled = false;
+    }
+  } else {
+    if (+ctx.value !== 0) {
+      ctx.disabled = true;
+    } else {
+      ctx.disabled = false;
+    }
+  }
+};
+
+// validate capacity by value
+var validateCapacity = function (ctx, value) {
+  var errorMsg = '';
+  var chosenOption = ctx.querySelector('option[value="' + ctx.value + '"]');
+
+  disableCapacityChildNodes(ctx, value);
+
+  if (chosenOption.disabled) {
+    errorMsg = 'Неподходящее количество гостей';
+  }
+
+  setValidationMsg(ctx, errorMsg);
+};
+
+var adValidationRules = function (ctx, props) {
+  var adTitle = getNodeBySelector('input[name=title]', ctx);
+  var adAddress = getNodeBySelector('input[name=address]', ctx);
+  var adEstateType = getNodeBySelector('select[name=type]', ctx);
+  var adPrice = getNodeBySelector('input[name=price]', ctx);
+  var adTimeIn = getNodeBySelector('select[name=timein]', ctx);
+  var adTimeOut = getNodeBySelector('select[name=timeout]', ctx);
+  var adRooms = getNodeBySelector('select[name=rooms]', ctx);
+  var adCapacity = getNodeBySelector('select[name=capacity]', ctx);
+  var adReset = getNodeBySelector('button[type=reset]', ctx);
+  var types = props.types;
+
+  // initial validation rules
+  priceMinimum(adPrice, types[adEstateType.value]);
+  disableTimeOutChildNodes(adTimeOut, adTimeIn.value);
+  disableCapacityChildNodes(adCapacity, +adRooms.value);
+
+  // force usage of map coordinates of readonly doesn't work
+  adAddress.addEventListener('input', function (e) {
+    e.target.value = mainPinAd.offer.address;
+  });
+
+  // change price validation if type changed
+  adEstateType.addEventListener('change', function (e) {
+    priceMinimum(adPrice, types[e.target.value]);
+    validatePrice(adPrice);
+  });
+
+  // price validation msg
+  adPrice.addEventListener('input', function (e) {
+    validatePrice(e.target);
+  });
+
+  // time out validation if time in changed
+  adTimeIn.addEventListener('change', function (e) {
+    validateTimeInOut(adTimeOut, e.target.value);
+  });
+
+  // time out validation
+  adTimeOut.addEventListener('change', function (e) {
+    validateTimeInOut(e.target, adTimeIn.value);
+  });
+
+  // capacity validation if number of rooms changed
+  adRooms.addEventListener('change', function (e) {
+    validateCapacity(adCapacity, +e.target.value);
+  });
+
+  // capacity validation
+  adCapacity.addEventListener('change', function (e) {
+    validateCapacity(e.target, +adRooms.value);
+  });
+
+  adReset.addEventListener('click', function (e) {
+    var mainPin = getNodeBySelector('.map__pin--main', map);
+    var adsPins = map.querySelectorAll(
+        '.map__pin:not(.map__pin--main)'
+    );
+    var card = getNodeBySelector('.map__card', map);
+
+    map.classList.add('map--faded');
+    mainPin.addEventListener('click', enableAdForm);
+    ctx.classList.add('ad-form--disabled');
+
+    if (card) {
+      removeNodeFromParent(card);
+    }
+
+    for (var i = 0; i < adsPins.length; i += 1) {
+      removeNodeFromParent(adsPins[i]);
+    }
+
+    adForm.reset();
+    disableAdForm(formElementsTypes, ctx);
+  });
+};
+
+// get ad form node
+var adForm = getNodeBySelector('.ad-form');
+// disable it initially
+disableAdForm(formElementsTypes, adForm);
+// fill required attributes for form
+requiredFormElementsByType(adForm, requiredControls);
+// init validation for ad form
+adValidationRules(adForm, validationProps);
