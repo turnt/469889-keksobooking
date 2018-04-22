@@ -199,8 +199,7 @@ var generateAdvertItem = function (props, id, title, url) {
   advert.offer.checkout = getRandomArrayItem(props.offer.checkoutTimes);
 
   advert.offer.features = getMultipleRandomArrayItems(
-      props.offer.features,
-      true
+      props.offer.features
   );
   advert.offer.description = props.offer.description;
   advert.offer.photos = shuffleArray(props.offer.photosUrls);
@@ -265,7 +264,7 @@ var renderCard = function (props, template, target) {
 };
 
 // remove card card from parent node and set current cardIndex to -1
-var removeCardFromMap = function (ctx) {
+var removeNodeFromParent = function (ctx) {
   ctx.parentNode.removeChild(ctx);
   cardId = null;
 };
@@ -300,12 +299,12 @@ var createCard = function (advert, template) {
 
   var onEnterRemoveCard = function (e) {
     if (e.keyCode === keycodes.enter) {
-      removeCardFromMap(card);
+      removeNodeFromParent(card);
     }
   };
 
   var onClickRemoveCard = function () {
-    removeCardFromMap(card);
+    removeNodeFromParent(card);
   };
 
   cardClose.addEventListener('keydown', onEnterRemoveCard);
@@ -567,7 +566,7 @@ var validateTimeInOut = function (ctx, time) {
   disableTimeOutChildNodes(ctx, time);
 
   if (chosenOption.disabled) {
-    errorMsg = 'Время выезда должно быть ранее или равно заезду';
+    errorMsg = 'Время выезда должно быть равно или позднее заезда';
   }
 
   setValidationMsg(ctx, errorMsg);
@@ -584,7 +583,7 @@ var disableTimeOutChildNodes = function (ctx, value) {
 
 // time out rule for disabled options
 var timeOutDisabledRule = function (ctx, value) {
-  if (ctx.value > value) {
+  if (ctx.value < value) {
     ctx.disabled = true;
   } else {
     ctx.disabled = false;
@@ -632,6 +631,7 @@ var validateCapacity = function (ctx, value) {
 };
 
 var adValidationRules = function (ctx, props) {
+  var adTitle = getNodeBySelector('input[name=title]', ctx);
   var adAddress = getNodeBySelector('input[name=address]', ctx);
   var adEstateType = getNodeBySelector('select[name=type]', ctx);
   var adPrice = getNodeBySelector('input[name=price]', ctx);
@@ -639,6 +639,7 @@ var adValidationRules = function (ctx, props) {
   var adTimeOut = getNodeBySelector('select[name=timeout]', ctx);
   var adRooms = getNodeBySelector('select[name=rooms]', ctx);
   var adCapacity = getNodeBySelector('select[name=capacity]', ctx);
+  var adReset = getNodeBySelector('button[type=reset]', ctx);
   var types = props.types;
 
   // initial validation rules
@@ -680,6 +681,29 @@ var adValidationRules = function (ctx, props) {
   // capacity validation
   adCapacity.addEventListener('change', function (e) {
     validateCapacity(e.target, +adRooms.value);
+  });
+
+  adReset.addEventListener('click', function (e) {
+    var mainPin = getNodeBySelector('.map__pin--main', map);
+    var adsPins = map.querySelectorAll(
+        '.map__pin:not(.map__pin--main)'
+    );
+    var card = getNodeBySelector('.map__card', map);
+
+    map.classList.add('map--faded');
+    mainPin.addEventListener('click', enableAdForm);
+    ctx.classList.add('ad-form--disabled');
+
+    if (card) {
+      removeNodeFromParent(card);
+    }
+
+    for (var i = 0; i < adsPins.length; i += 1) {
+      removeNodeFromParent(adsPins[i]);
+    }
+
+    adForm.reset();
+    disableAdForm(formElementsTypes, ctx);
   });
 };
 
