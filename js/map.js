@@ -396,10 +396,6 @@ var guestsSuffix = function (num) {
       (num % 10 === 1) && (num % 100 !== 11) ? 'я' : 'ей';
 };
 
-var getMainPinCoords = function () {
-
-};
-
 // add disabled attribute for collection
 var disableNodes = function (ctx, reverse) {
   for (var i = 0, length = ctx.length; i < length; i += 1) {
@@ -433,8 +429,9 @@ var enableAdForm = function (e) {
   mainPin.initialCoords.x = mainPin.style.left;
   mainPin.initialCoords.y = mainPin.style.top;
 
-  var address = '';
   mainPin.location = {};
+
+  mainPin.removeEventListener('mousedown', enableAdForm);
 
   disableAdForm(formElementsTypes, adForm, true);
   removeHiddenFromNode(map, 'map--faded');
@@ -444,8 +441,8 @@ var enableAdForm = function (e) {
   var pins = pinsNode.querySelectorAll('.map__pin:not(.map__pin--main)');
 
   for (var i = 0, length = pins.length; i < length; i += 1) {
-    pins[i].addEventListener('click', function (e) {
-      var pin = e.currentTarget;
+    pins[i].addEventListener('click', function (pinEvt) {
+      var pin = pinEvt.currentTarget;
       if (pin.advertId !== cardId) {
         cardId = pin.advertId;
 
@@ -453,6 +450,10 @@ var enableAdForm = function (e) {
       }
     });
   }
+};
+
+var dragMainPin = function (e) {
+  var mainPin = e.currentTarget;
 
   var startCoords = {
     x: e.clientX,
@@ -517,8 +518,6 @@ var enableAdForm = function (e) {
 
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
-
-  // mainPin.removeEventListener('mouseup', enableAdForm);
 };
 
 // generate mainPin ad draft
@@ -534,6 +533,7 @@ var generateMainPinAd = function (props, selector, ctx) {
   mainPinAd.offer.address = mainPinAd.location.x + ', ' + mainPinAd.location.y;
 
   mainPin.addEventListener('mousedown', enableAdForm);
+  mainPin.addEventListener('mousedown', dragMainPin);
 
   return mainPinAd;
 };
@@ -705,7 +705,6 @@ var validateCapacity = function (ctx, value) {
 };
 
 var adValidationRules = function (ctx, props) {
-  var adTitle = getNodeBySelector('input[name=title]', ctx);
   var adAddress = getNodeBySelector('input[name=address]', ctx);
   var adEstateType = getNodeBySelector('select[name=type]', ctx);
   var adPrice = getNodeBySelector('input[name=price]', ctx);
@@ -757,7 +756,7 @@ var adValidationRules = function (ctx, props) {
     validateCapacity(e.target, +adRooms.value);
   });
 
-  adReset.addEventListener('click', function (e) {
+  adReset.addEventListener('click', function () {
     var mainPin = getNodeBySelector('.map__pin--main', map);
     var adsPins = map.querySelectorAll(
         '.map__pin:not(.map__pin--main)'
@@ -781,7 +780,7 @@ var adValidationRules = function (ctx, props) {
 
     mainPin.style.left = mainPin.initialCoords.x;
     mainPin.style.top = mainPin.initialCoords.y;
-    mainPin.location = undefined;
+    mainPin.location = null;
   });
 };
 
