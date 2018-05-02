@@ -240,7 +240,7 @@ var createPin = function (advert, template) {
 
   pin.advertId = advert.id;
   pin.style.left = advert.location.x - Math.round(pinsProps.width / 2) + 'px';
-  pin.style.top = advert.location.y - Math.round(pinsProps.height / 2) + 'px';
+  pin.style.top = advert.location.y - Math.round(pinsProps.height) + 'px';
 
   pinImg.src = advert.author.avatar;
   pinImg.alt = advert.offer.title;
@@ -396,6 +396,10 @@ var guestsSuffix = function (num) {
       (num % 10 === 1) && (num % 100 !== 11) ? 'я' : 'ей';
 };
 
+var getMainPinCoords = function () {
+
+};
+
 // add disabled attribute for collection
 var disableNodes = function (ctx, reverse) {
   for (var i = 0, length = ctx.length; i < length; i += 1) {
@@ -421,8 +425,16 @@ var disableAdForm = function (types, form, reverse) {
 };
 
 // enable form elements
-var enableAdForm = function () {
-  var mainPin = getNodeBySelector('.map__pin--main');
+var enableAdForm = function (e) {
+  e.preventDefault();
+
+  var mainPin = e.currentTarget;
+  mainPin.initialCoords = {};
+  mainPin.initialCoords.x = mainPin.style.left;
+  mainPin.initialCoords.y = mainPin.style.top;
+
+  var address = '';
+  mainPin.location = {};
 
   disableAdForm(formElementsTypes, adForm, true);
   removeHiddenFromNode(map, 'map--faded');
@@ -442,9 +454,71 @@ var enableAdForm = function () {
     });
   }
 
-  fillFormAddress(adForm, mainPinAd.offer.address);
+  var startCoords = {
+    x: e.clientX,
+    y: e.clientY,
+  };
 
-  mainPin.removeEventListener('mouseup', enableAdForm);
+  var mainPinLocation = function () {
+    mainPin.location.x = parseInt(mainPin.style.left, 10) +
+      Math.floor(mainPin.offsetWidth / 2);
+    mainPin.location.y = parseInt(mainPin.style.top, 10) + mainPin.offsetHeight;
+
+    return mainPin.location.x + ', ' + mainPin.location.y;
+  };
+
+  var onMouseMove = function (moveEvt) {
+    moveEvt.preventDefault();
+
+    var shift = {
+      x: startCoords.x - moveEvt.clientX,
+      y: startCoords.y - moveEvt.clientY
+    };
+
+    startCoords = {
+      x: moveEvt.clientX,
+      y: moveEvt.clientY
+    };
+
+    var minX = estateProps.locationCoordinates.x[0] - Math.floor(mainPin.offsetWidth / 2);
+    var maxX = estateProps.locationCoordinates.x[1] - Math.floor(mainPin.offsetWidth / 2);
+    var minY = estateProps.locationCoordinates.y[0] - Math.floor(mainPin.offsetHeight);
+    var maxY = estateProps.locationCoordinates.y[1] - Math.floor(mainPin.offsetHeight);
+
+    var pinPositionX = mainPin.offsetLeft - shift.x;
+    var pinPositionY = mainPin.offsetTop - shift.y;
+
+    if (pinPositionX >= maxX) {
+      pinPositionX = maxX;
+    } else if (pinPositionX <= minX) {
+      pinPositionX = minX;
+    }
+
+    if (pinPositionY >= maxY) {
+      pinPositionY = maxY;
+    } else if (pinPositionY <= minY) {
+      pinPositionY = minY;
+    }
+
+    mainPin.style.left = pinPositionX + 'px';
+    mainPin.style.top = pinPositionY + 'px';
+
+    fillFormAddress(adForm, mainPinLocation());
+  };
+
+  var onMouseUp = function (upEvt) {
+    upEvt.preventDefault();
+
+    fillFormAddress(adForm, mainPinLocation());
+
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  };
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+
+  // mainPin.removeEventListener('mouseup', enableAdForm);
 };
 
 // generate mainPin ad draft
@@ -459,7 +533,7 @@ var generateMainPinAd = function (props, selector, ctx) {
   mainPinAd.location.y = parseInt(mainPin.style.top, 10) + mainPin.offsetHeight;
   mainPinAd.offer.address = mainPinAd.location.x + ', ' + mainPinAd.location.y;
 
-  mainPin.addEventListener('mouseup', enableAdForm);
+  mainPin.addEventListener('mousedown', enableAdForm);
 
   return mainPinAd;
 };
@@ -691,7 +765,7 @@ var adValidationRules = function (ctx, props) {
     var card = getNodeBySelector('.map__card', map);
 
     map.classList.add('map--faded');
-    mainPin.addEventListener('click', enableAdForm);
+    mainPin.addEventListener('mousedown', enableAdForm);
     ctx.classList.add('ad-form--disabled');
 
     if (card) {
@@ -704,6 +778,10 @@ var adValidationRules = function (ctx, props) {
 
     adForm.reset();
     disableAdForm(formElementsTypes, ctx);
+
+    mainPin.style.left = mainPin.initialCoords.x;
+    mainPin.style.top = mainPin.initialCoords.y;
+    mainPin.location = undefined;
   });
 };
 
