@@ -240,7 +240,7 @@ var createPin = function (advert, template) {
 
   pin.advertId = advert.id;
   pin.style.left = advert.location.x - Math.round(pinsProps.width / 2) + 'px';
-  pin.style.top = advert.location.y - Math.round(pinsProps.height / 2) + 'px';
+  pin.style.top = advert.location.y - Math.round(pinsProps.height) + 'px';
 
   pinImg.src = advert.author.avatar;
   pinImg.alt = advert.offer.title;
@@ -421,8 +421,17 @@ var disableAdForm = function (types, form, reverse) {
 };
 
 // enable form elements
-var enableAdForm = function () {
-  var mainPin = getNodeBySelector('.map__pin--main');
+var enableAdForm = function (e) {
+  e.preventDefault();
+
+  var mainPin = e.currentTarget;
+  mainPin.initialCoords = {};
+  mainPin.initialCoords.x = mainPin.style.left;
+  mainPin.initialCoords.y = mainPin.style.top;
+
+  mainPin.location = {};
+
+  mainPin.removeEventListener('mousedown', enableAdForm);
 
   disableAdForm(formElementsTypes, adForm, true);
   removeHiddenFromNode(map, 'map--faded');
@@ -432,8 +441,8 @@ var enableAdForm = function () {
   var pins = pinsNode.querySelectorAll('.map__pin:not(.map__pin--main)');
 
   for (var i = 0, length = pins.length; i < length; i += 1) {
-    pins[i].addEventListener('click', function (e) {
-      var pin = e.currentTarget;
+    pins[i].addEventListener('click', function (pinEvt) {
+      var pin = pinEvt.currentTarget;
       if (pin.advertId !== cardId) {
         cardId = pin.advertId;
 
@@ -441,10 +450,74 @@ var enableAdForm = function () {
       }
     });
   }
+};
 
-  fillFormAddress(adForm, mainPinAd.offer.address);
+var dragMainPin = function (e) {
+  var mainPin = e.currentTarget;
 
-  mainPin.removeEventListener('mouseup', enableAdForm);
+  var startCoords = {
+    x: e.clientX,
+    y: e.clientY,
+  };
+
+  var mainPinLocation = function () {
+    mainPin.location.x = parseInt(mainPin.style.left, 10) +
+      Math.floor(mainPin.offsetWidth / 2);
+    mainPin.location.y = parseInt(mainPin.style.top, 10) + mainPin.offsetHeight;
+
+    return mainPin.location.x + ', ' + mainPin.location.y;
+  };
+
+  var onMouseMove = function (moveEvt) {
+    moveEvt.preventDefault();
+
+    var shift = {
+      x: startCoords.x - moveEvt.clientX,
+      y: startCoords.y - moveEvt.clientY
+    };
+
+    startCoords = {
+      x: moveEvt.clientX,
+      y: moveEvt.clientY
+    };
+
+    var minX = estateProps.locationCoordinates.x[0] - Math.floor(mainPin.offsetWidth / 2);
+    var maxX = estateProps.locationCoordinates.x[1] - Math.floor(mainPin.offsetWidth / 2);
+    var minY = estateProps.locationCoordinates.y[0] - Math.floor(mainPin.offsetHeight);
+    var maxY = estateProps.locationCoordinates.y[1] - Math.floor(mainPin.offsetHeight);
+
+    var pinPositionX = mainPin.offsetLeft - shift.x;
+    var pinPositionY = mainPin.offsetTop - shift.y;
+
+    if (pinPositionX >= maxX) {
+      pinPositionX = maxX;
+    } else if (pinPositionX <= minX) {
+      pinPositionX = minX;
+    }
+
+    if (pinPositionY >= maxY) {
+      pinPositionY = maxY;
+    } else if (pinPositionY <= minY) {
+      pinPositionY = minY;
+    }
+
+    mainPin.style.left = pinPositionX + 'px';
+    mainPin.style.top = pinPositionY + 'px';
+
+    fillFormAddress(adForm, mainPinLocation());
+  };
+
+  var onMouseUp = function (upEvt) {
+    upEvt.preventDefault();
+
+    fillFormAddress(adForm, mainPinLocation());
+
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  };
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
 };
 
 // generate mainPin ad draft
@@ -459,7 +532,8 @@ var generateMainPinAd = function (props, selector, ctx) {
   mainPinAd.location.y = parseInt(mainPin.style.top, 10) + mainPin.offsetHeight;
   mainPinAd.offer.address = mainPinAd.location.x + ', ' + mainPinAd.location.y;
 
-  mainPin.addEventListener('mouseup', enableAdForm);
+  mainPin.addEventListener('mousedown', enableAdForm);
+  mainPin.addEventListener('mousedown', dragMainPin);
 
   return mainPinAd;
 };
@@ -631,7 +705,6 @@ var validateCapacity = function (ctx, value) {
 };
 
 var adValidationRules = function (ctx, props) {
-  var adTitle = getNodeBySelector('input[name=title]', ctx);
   var adAddress = getNodeBySelector('input[name=address]', ctx);
   var adEstateType = getNodeBySelector('select[name=type]', ctx);
   var adPrice = getNodeBySelector('input[name=price]', ctx);
@@ -683,7 +756,7 @@ var adValidationRules = function (ctx, props) {
     validateCapacity(e.target, +adRooms.value);
   });
 
-  adReset.addEventListener('click', function (e) {
+  adReset.addEventListener('click', function () {
     var mainPin = getNodeBySelector('.map__pin--main', map);
     var adsPins = map.querySelectorAll(
         '.map__pin:not(.map__pin--main)'
@@ -691,7 +764,7 @@ var adValidationRules = function (ctx, props) {
     var card = getNodeBySelector('.map__card', map);
 
     map.classList.add('map--faded');
-    mainPin.addEventListener('click', enableAdForm);
+    mainPin.addEventListener('mousedown', enableAdForm);
     ctx.classList.add('ad-form--disabled');
 
     if (card) {
@@ -704,6 +777,10 @@ var adValidationRules = function (ctx, props) {
 
     adForm.reset();
     disableAdForm(formElementsTypes, ctx);
+
+    mainPin.style.left = mainPin.initialCoords.x;
+    mainPin.style.top = mainPin.initialCoords.y;
+    mainPin.location = null;
   });
 };
 
