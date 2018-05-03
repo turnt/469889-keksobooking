@@ -196,7 +196,7 @@
     map.classList.remove('map--faded');
     adForm.classList.remove('ad-form--disabled');
 
-    window.pins.renderPins(
+    window.pins.render(
         window.data.adverts,
         window.map.pinTemplate,
         window.map.pinsNode
@@ -208,11 +208,11 @@
     for (var i = 0, length = pins.length; i < length; i += 1) {
       pins[i].addEventListener('click', function (pinEvt) {
         var target = pinEvt.currentTarget;
-        if (target.advertId !== window.card.cardId) {
-          window.card.cardId = target.advertId;
+        if (target.advertId !== window.card.id) {
+          window.card.id = target.advertId;
 
-          window.card.renderCard(
-              window.data.adverts[window.card.cardId],
+          window.card.render(
+              window.data.adverts[window.card.id],
               window.map.cardTemplate, map
           );
         }
@@ -355,7 +355,7 @@
 
       if (card) {
         window.util.removeNodeFromParent(card);
-        window.card.cardId = null;
+        window.card.id = null;
       }
 
       for (var i = 0; i < adsPins.length; i += 1) {

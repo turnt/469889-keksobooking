@@ -97,13 +97,13 @@
     var onEnterRemoveCard = function (e) {
       if (e.keyCode === keycodes.ENTER) {
         window.util.removeNodeFromParent(card);
-        window.card.cardId = null;
+        window.card.id = null;
       }
     };
 
     var onClickRemoveCard = function () {
       window.util.removeNodeFromParent(card);
-      window.card.cardId = null;
+      window.card.id = null;
     };
 
     cardClose.addEventListener('keydown', onEnterRemoveCard);
@@ -152,7 +152,7 @@
   };
 
   window.card = {
-    cardId: cardId,
-    renderCard: renderCard,
+    id: cardId,
+    render: renderCard,
   };
 })();

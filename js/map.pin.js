@@ -53,7 +53,7 @@
   );
 
   window.pins = {
-    renderPins: renderPins,
+    render: renderPins,
     mainPinAd: mainPinAd,
   };
 })();
