@@ -8,11 +8,11 @@
   };
 
   // create pin with template
-  var createPin = function (advert, template) {
+  var createPin = function (advert, template, id) {
     var pin = template.cloneNode(true);
     var pinImg = pin.querySelector('img');
 
-    pin.advertId = advert.id;
+    pin.advertId = id;
     pin.style.left = advert.location.x - Math.round(pinsProps.width / 2) + 'px';
     pin.style.top = advert.location.y - Math.round(pinsProps.height) + 'px';
 
@@ -27,7 +27,7 @@
     var fragment = document.createDocumentFragment();
 
     for (var i = 0, length = adverts.length; i < length; i++) {
-      fragment.appendChild(createPin(adverts[i], template));
+      fragment.appendChild(createPin(adverts[i], template, i));
     }
 
     target.appendChild(fragment);
