@@ -123,14 +123,24 @@
     cardCheckInOut.textContent = 'Заезд после ' + advert.offer.checkin +
         ', выезд до ' + advert.offer.checkout;
 
-    cardDescription.textContent = advert.offer.description;
+    advert.offer.description.length > 0 ?
+        cardDescription.textContent = advert.offer.description :
+        window.util.removeNodeFromParent(cardDescription);
 
-    generateFeatures(cardFeatures, advert.offer.features);
+    advert.offer.features.length > 0 ?
+        generateFeatures(cardFeatures, advert.offer.features) :
+        window.util.removeNodeFromParent(cardFeatures);
 
-    for (var i = 0; i < advert.offer.photos.length; i += 1) {
-      cardImages.appendChild(
-          generateCardPhoto(card, '.popup__photo', i, advert.offer)
-      );
+    var photosLength = advert.offer.photos.length;
+
+    if (photosLength > 0) {
+      for (var i = 0; i < photosLength; i += 1) {
+        cardImages.appendChild(
+            generateCardPhoto(card, '.popup__photo', i, advert.offer)
+        );
+      }
+    } else {
+      window.util.removeNodeFromParent(cardImages);
     }
 
     return card;
