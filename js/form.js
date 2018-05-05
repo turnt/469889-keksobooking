@@ -317,7 +317,7 @@
     adReset.addEventListener('click', resetForm);
   };
 
-  var resetForm = function (ctx) {
+  var resetForm = function () {
     var adsPins = map.querySelectorAll(
         '.map__pin:not(.map__pin--main)'
     );
@@ -325,7 +325,7 @@
 
     map.classList.add('map--faded');
     mainPin.addEventListener('mousedown', enableAdForm);
-    ctx.classList.add('ad-form--disabled');
+    adForm.classList.add('ad-form--disabled');
 
     if (card) {
       window.util.removeNodeFromParent(card);
@@ -337,7 +337,7 @@
     }
 
     adForm.reset();
-    disableAdForm(formElementsTypes, ctx);
+    disableAdForm(formElementsTypes, adForm);
 
     mainPin.style.left = mainPinCoordsX;
     mainPin.style.top = mainPinCoordsY;
