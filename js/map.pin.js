@@ -12,6 +12,8 @@
     HEIGHT: 70,
   };
 
+  var MAIN_PIN_ANCHOR_HEIGHT = 15;
+
   var MAX_NUMBER_OF_PINS = 5;
 
   // create pin with template
@@ -51,8 +53,7 @@
     pinAd.location = {};
     pinAd.location.x = parseInt(pin.style.left, 10) +
         Math.floor(pin.offsetWidth / 2);
-    pinAd.location.y = parseInt(pin.style.top, 10) +
-        pin.offsetHeight + 10;
+    pinAd.location.y = parseInt(pin.style.top, 10) + mainPinHeight;
     pinAd.location.YLimits = mainPinLocationYLimits;
 
     pinAd.offer = {};
@@ -83,11 +84,14 @@
     }
   };
 
+  var mainPinHeight = window.map.mainPin.offsetHeight + MAIN_PIN_ANCHOR_HEIGHT;
+
   var mainPinAd = generateMainPinAd(window.map.mainPin);
 
   window.pins = {
     render: renderPins,
     mainPinAd: mainPinAd,
+    mainPinHeight: mainPinHeight,
     fillPinsClickEvents: fillPinsClickEvents,
     maxLength: MAX_NUMBER_OF_PINS,
   };

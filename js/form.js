@@ -194,12 +194,10 @@
   };
 
   var mainPinLocation = function () {
-    var mainPinAnchorHeight = 15;
-
     mainPin.location.x = parseInt(mainPin.style.left, 10) +
         Math.floor(mainPin.offsetWidth / 2);
     mainPin.location.y = parseInt(mainPin.style.top, 10) +
-        mainPin.offsetHeight + mainPinAnchorHeight;
+        mainPin.offsetHeight;
 
     return mainPin.location.x + ', ' + mainPin.location.y;
   };
