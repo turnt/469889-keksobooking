@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  var errorCode = {
+  var ResponseCode = {
     OK: 200,
     BAD_REQUEST: 400,
     NOT_FOUND: 404,
@@ -9,23 +9,23 @@
 
   var xhrLoad = function (onLoad, onError) {
     var xhr = new XMLHttpRequest();
+    var oldAlert = document.querySelector('#system-alert');
+
     xhr.responseType = 'json';
 
-    var alert = document.querySelector('#system-alert');
-
-    if (alert) {
-      alert.parentNode.removeChild(alert);
+    if (oldAlert) {
+      window.util.removeNodeFromParent(oldAlert);
     }
 
     xhr.addEventListener('load', function () {
       switch (xhr.status) {
-        case errorCode.OK:
+        case ResponseCode.OK:
           onLoad(xhr.response);
           break;
-        case errorCode.BAD_REQUEST:
+        case ResponseCode.BAD_REQUEST:
           onError('Неверный запрос');
           break;
-        case errorCode.NOT_FOUND:
+        case ResponseCode.NOT_FOUND:
           onError('Запрашиваемый ресурс не найден');
           break;
         default:

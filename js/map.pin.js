@@ -1,11 +1,18 @@
 'use strict';
 
 (function () {
-  // pins props
-  var pinsProps = {
-    width: 50,
-    height: 70,
+  // ad Y position limits
+  var MainPinLocationYLimits = {
+    MIN: 150,
+    MAX: 500,
   };
+  // pins props
+  var mapPinSize = {
+    WIDTH: 50,
+    HEIGHT: 70,
+  };
+
+  var MAX_NUMBER_OF_PINS = 5;
 
   // create pin with template
   var createPin = function (advert, template, id) {
@@ -13,8 +20,8 @@
     var pinImg = pin.querySelector('img');
 
     pin.advertId = id;
-    pin.style.left = advert.location.x - Math.round(pinsProps.width / 2) + 'px';
-    pin.style.top = advert.location.y - Math.round(pinsProps.height) + 'px';
+    pin.style.left = advert.location.x - Math.floor(mapPinSize.WIDTH / 2) + 'px';
+    pin.style.top = advert.location.y - Math.floor(mapPinSize.HEIGHT) + 'px';
 
     pinImg.src = advert.author.avatar;
     pinImg.alt = advert.offer.title;
@@ -23,10 +30,12 @@
   };
 
   // render pins to target node filled with template
-  var renderPins = function (adverts, template, target) {
+  var renderPins = function (adverts, template, target, length) {
     var fragment = document.createDocumentFragment();
 
-    for (var i = 0, length = adverts.length; i < length; i++) {
+    var numberOfPinsOnMap = length || adverts.length;
+
+    for (var i = 0; i < numberOfPinsOnMap; i++) {
       fragment.appendChild(createPin(adverts[i], template, i));
     }
 
@@ -34,26 +43,50 @@
   };
 
   // generate mainPin ad draft
-  var generateMainPinAd = function (props, pin) {
-    var mainPinTitle = window.util.getRandomArrayItem(props.offer.titles);
-    var mainPinAd = window.data.generateAdvertItem(props, null, mainPinTitle);
+  var generateMainPinAd = function (pin) {
+    var pinAd = {};
 
-    mainPinAd.location.x = parseInt(pin.style.left, 10) +
+    pinAd.location = {};
+    pinAd.location.x = parseInt(pin.style.left, 10) +
         Math.floor(pin.offsetWidth / 2);
-    mainPinAd.location.y = parseInt(pin.style.top, 10) +
+    pinAd.location.y = parseInt(pin.style.top, 10) +
         pin.offsetHeight + 10;
-    mainPinAd.offer.address = mainPinAd.location.x + ', ' +
-        mainPinAd.location.y;
+    pinAd.location.YLimits = MainPinLocationYLimits;
 
-    return mainPinAd;
+    pinAd.offer = {};
+    pinAd.offer.address = pinAd.location.x + ', ' +
+        pinAd.location.y;
+
+    return pinAd;
   };
 
-  var mainPinAd = generateMainPinAd(
-      window.data.props, window.map.mainPin
-  );
+  var fillPinsClickEvents = function (data) {
+    var pins = window.map.pinsNode.querySelectorAll(
+        '.map__pin:not(.map__pin--main)'
+    );
+
+    for (var i = 0, length = pins.length; i < length; i += 1) {
+      pins[i].addEventListener('click', function (pinEvt) {
+        var target = pinEvt.currentTarget;
+        if (target.advertId !== window.card.id) {
+          window.card.id = target.advertId;
+
+          window.card.render(
+              data[window.card.id],
+              window.map.cardTemplate,
+              window.map.node
+          );
+        }
+      });
+    }
+  };
+
+  var mainPinAd = generateMainPinAd(window.map.mainPin);
 
   window.pins = {
     render: renderPins,
     mainPinAd: mainPinAd,
+    fillPinsClickEvents: fillPinsClickEvents,
+    maxLength: MAX_NUMBER_OF_PINS,
   };
 })();

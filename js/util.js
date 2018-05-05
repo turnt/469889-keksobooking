@@ -19,16 +19,6 @@
     return shuffledArray;
   };
 
-  // return random value from array
-  var getRandomArrayItem = function (arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-  };
-
-  // ascendant sorting rule
-  var sortAscendant = function (a, b) {
-    return a - b;
-  };
-
   // Array with multiple values from array
   // and shuffle it if straight is undefined or false
   var getMultipleRandomArrayItems = function (arr, straight) {
@@ -44,15 +34,35 @@
   };
 
   // remove card card from parent node and set current cardIndex to -1
-  var removeNodeFromParent = function (ctx) {
-    ctx.parentNode.removeChild(ctx);
+  var removeNodeFromParent = function (node) {
+    node.parentNode.removeChild(node);
+  };
+
+  // fill ctx node styles from object
+  var fillStyleFromObject = function (ctx, obj) {
+    var objKeys = Object.keys(obj);
+
+    objKeys.forEach(function (key) {
+      ctx[key] = obj[key];
+    });
+  };
+
+  var debounce = function (fn, interval) {
+    var lastTimeout;
+
+    return function () {
+      if (lastTimeout) {
+        window.clearTimeout(lastTimeout);
+      }
+
+      lastTimeout = window.setTimeout(fn, interval);
+    };
   };
 
   window.util = {
-    shuffleArray: shuffleArray,
-    getRandomArrayItem: getRandomArrayItem,
-    sortAscendant: sortAscendant,
-    getMultipleRandomArrayItems: getMultipleRandomArrayItems,
     removeNodeFromParent: removeNodeFromParent,
+    getMultipleRandomArrayItems: getMultipleRandomArrayItems,
+    fillStyleFromObject: fillStyleFromObject,
+    debounce: debounce,
   };
 })();
