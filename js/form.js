@@ -172,7 +172,7 @@
   };
 
   // disable form elements
-  var disableAdForm = function (types, form, reverse) {
+  var disableForm = function (types, form, reverse) {
     for (var i = 0, length = types.length; i < length; i += 1) {
       disableFormElementsByType(form, types[i], reverse);
     }
@@ -182,11 +182,13 @@
   var enableAdForm = function (e) {
     e.preventDefault();
 
+    disableForm(formElementsTypes, window.map.filters, true);
+
     mainPin.initialCoords = {};
     mainPin.initialCoords.x = mainPin.style.left;
     mainPin.initialCoords.y = mainPin.style.top;
 
-    disableAdForm(formElementsTypes, adForm, true);
+    disableForm(formElementsTypes, adForm, true);
     map.classList.remove('map--faded');
     adForm.classList.remove('ad-form--disabled');
 
@@ -335,7 +337,7 @@
     }
 
     adForm.reset();
-    disableAdForm(formElementsTypes, adForm);
+    disableForm(formElementsTypes, adForm);
 
     mainPin.style.left = defaultMainPinCoordX;
     mainPin.style.top = defaultMainPinCoordY;
@@ -442,8 +444,10 @@
 
   fillFormAddress(adForm, mainPinLocation());
 
+  disableForm(formElementsTypes, window.map.filters);
+
   // disable it initially
-  disableAdForm(formElementsTypes, adForm);
+  disableForm(formElementsTypes, adForm);
   // fill required attributes for form
   requiredFormElementsByType(adForm, requiredControls);
   // init validation for ad form
