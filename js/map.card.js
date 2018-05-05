@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  var keycodes = {
+  var Keycode = {
     ENTER: 13,
   };
 
@@ -95,7 +95,7 @@
     var cardClose = card.querySelector('.popup__close');
 
     var onEnterRemoveCard = function (e) {
-      if (e.keyCode === keycodes.ENTER) {
+      if (e.keyCode === Keycode.ENTER) {
         window.util.removeNodeFromParent(card);
         window.card.id = null;
       }

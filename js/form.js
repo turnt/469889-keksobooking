@@ -13,13 +13,11 @@
   ];
 
   // validation props
-  var validationProps = {
-    types: {
-      palace: 10000,
-      house: 5000,
-      flat: 1000,
-      bungalo: 0,
-    },
+  var TypeMinPriceLimit = {
+    PALACE: 10000,
+    HOUSE: 5000,
+    FLAT: 1000,
+    BUNGALO: 0,
   };
 
   // recieve array of required elements
@@ -204,10 +202,12 @@
     };
 
     var mainPinLocation = function () {
+      var mainPinAnchorHeight = 15;
+
       mainPin.location.x = parseInt(mainPin.style.left, 10) +
           Math.floor(mainPin.offsetWidth / 2);
       mainPin.location.y = parseInt(mainPin.style.top, 10) +
-          mainPin.offsetHeight + 15;
+          mainPin.offsetHeight + mainPinAnchorHeight;
 
       return mainPin.location.x + ', ' + mainPin.location.y;
     };
@@ -225,33 +225,27 @@
         y: moveEvt.clientY
       };
 
-      var mapInnerPadding = 15;
+      var checkLimit = function (value, min, max) {
+        if (value >= max) {
+          return max;
+        } else if (value <= min) {
+          return min;
+        }
+        return value;
+      }
 
-      var minX = mapInnerPadding;
-      var maxX = map.clientWidth - mainPin.offsetWidth -
-          mapInnerPadding;
-      var minY = window.data.props.locationCoordinates.y[0] -
-          Math.floor(mainPin.offsetHeight) - mapInnerPadding;
-      var maxY = window.data.props.locationCoordinates.y[1] -
-          Math.floor(mainPin.offsetHeight) - mapInnerPadding;
+      var pinLocationLimitsY = window.pins.mainPinAd.location.YLimits;
+
+      var minX = 0;
+      var maxX = map.clientWidth - mainPin.offsetWidth;
+      var minY = pinLocationLimitsY.MIN - mainPin.offsetHeight;
+      var maxY = pinLocationLimitsY.MAX - mainPin.offsetHeight;
 
       var pinPositionX = mainPin.offsetLeft - shift.x;
       var pinPositionY = mainPin.offsetTop - shift.y;
 
-      if (pinPositionX >= maxX) {
-        pinPositionX = maxX;
-      } else if (pinPositionX <= minX) {
-        pinPositionX = minX;
-      }
-
-      if (pinPositionY >= maxY) {
-        pinPositionY = maxY;
-      } else if (pinPositionY <= minY) {
-        pinPositionY = minY;
-      }
-
-      mainPin.style.left = pinPositionX + 'px';
-      mainPin.style.top = pinPositionY + 'px';
+      mainPin.style.left = checkLimit(pinPositionX, minX, maxX) + 'px';
+      mainPin.style.top = checkLimit(pinPositionY, minY, maxY) + 'px';
 
       fillFormAddress(adForm, mainPinLocation());
     };
@@ -269,7 +263,8 @@
     document.addEventListener('mouseup', onMouseUp);
   };
 
-  var adValidationRules = function (ctx, props) {
+  var adValidationRules = function (ctx, type) {
+    var adTitle = ctx.querySelector('input[name=title]')
     var adAddress = ctx.querySelector('input[name=address]');
     var adEstateType = ctx.querySelector('select[name=type]');
     var adPrice = ctx.querySelector('input[name=price]');
@@ -278,10 +273,9 @@
     var adRooms = ctx.querySelector('select[name=rooms]');
     var adCapacity = ctx.querySelector('select[name=capacity]');
     var adReset = ctx.querySelector('button[type=reset]');
-    var types = props.types;
 
     // initial validation rules
-    priceMinimum(adPrice, types[adEstateType.value]);
+    priceMinimum(adPrice, type[adEstateType.value.toUpperCase()]);
     disableTimeOutChildNodes(adTimeOut, adTimeIn.value);
     disableCapacityChildNodes(adCapacity, +adRooms.value);
 
@@ -292,7 +286,7 @@
 
     // change price validation if type changed
     adEstateType.addEventListener('change', function (e) {
-      priceMinimum(adPrice, types[e.target.value]);
+      priceMinimum(adPrice, type[e.target.value.toUpperCase()]);
       validatePrice(adPrice);
     });
 
@@ -350,37 +344,25 @@
     mainPin.style.top = mainPinCoordsY;
   };
 
-  var successHandler = function (wizards) {
+  var successHandler = function (adverts) {
+    window.data.adverts = adverts;
+
     mainPin.removeEventListener('mousedown', enableAdForm);
 
+    window.filter();
+
     window.pins.render(
-        wizards,
+        adverts,
         window.map.pinTemplate,
-        window.map.pinsNode
+        window.map.pinsNode,
+        window.pins.maxLength,
     );
 
-    var pins = window.map.pinsNode.querySelectorAll(
-        '.map__pin:not(.map__pin--main)'
-    );
-
-    for (var i = 0, length = pins.length; i < length; i += 1) {
-      pins[i].addEventListener('click', function (pinEvt) {
-        var target = pinEvt.currentTarget;
-        if (target.advertId !== window.card.id) {
-          window.card.id = target.advertId;
-
-          window.card.render(
-              wizards[window.card.id],
-              window.map.cardTemplate, map
-          );
-        }
-      });
-    }
+    window.pins.fillPinsClickEvents(adverts.slice(0, window.pins.maxLength));
   };
 
-  var errorHandler = function (errorMessage) {
-    var node = document.createElement('div');
-    var style = node.style;
+  var errorHandler = function (errorMsg) {
+    var alert = document.createElement('div');
     var alertStyle = {
       position: 'fixed',
       top: '0',
@@ -395,17 +377,30 @@
       boxShadow: '0 2px 4px 2px rgba(0, 0, 0, 0.4)',
     };
 
-    var keys = Object.keys(alertStyle);
+    var alertClose = document.createElement('button');
+    var alertCloseStyle = {
+      position: 'absolute',
+      top: '6px',
+      right: '5vw',
+      fontSize: '16px',
+      color: '#000',
+      padding: '5px 10px',
+    };
 
-    for (var i = 0; i < keys.length; i += 1) {
-      style[keys[i]] = alertStyle[keys[i]];
-    }
+    alertClose.textContent = 'Закрыть';
+    alertClose.addEventListener('click', function () {
+      var alertNode = document.querySelector('#system-alert');
+      window.util.removeNodeFromParent(alertNode);
+    });
 
-    node.textContent = errorMessage;
-    node.id = 'system-alert';
-    document.body.insertAdjacentElement('beforeend', node);
+    window.util.fillStyleFromObject(alert.style, alertStyle);
+    window.util.fillStyleFromObject(alertClose.style, alertCloseStyle);
+
+    alert.textContent = errorMsg;
+    alert.id = 'system-alert';
+    alert.appendChild(alertClose);
+    document.body.insertAdjacentElement('beforeend', alert);
   };
-
 
   var map = window.map.node;
   var mainPin = window.map.mainPin;
@@ -423,18 +418,40 @@
 
   adForm.addEventListener('submit', function (e) {
     e.preventDefault();
-    window.backend.save(new FormData(adForm), function () {
-      resetForm(adForm);
-    }, errorHandler);
+
+    window.backend.save(
+        new FormData(adForm),
+        function () {
+          var successMessage = document.querySelector('.success');
+          var successMessageVisibilityDuration = 1500;
+
+          successMessage.classList.remove('hidden');
+          resetForm(adForm);
+
+          setTimeout(
+              function () {
+                successMessage.classList.add('hidden');
+              },
+              successMessageVisibilityDuration
+          );
+        },
+        errorHandler
+    );
   });
+
+  var advertsData = {};
 
   // disable it initially
   disableAdForm(formElementsTypes, adForm);
   // fill required attributes for form
   requiredFormElementsByType(adForm, requiredControls);
   // init validation for ad form
-  adValidationRules(adForm, validationProps);
+  adValidationRules(adForm, TypeMinPriceLimit);
 
   mainPin.addEventListener('mousedown', enableAdForm);
   mainPin.addEventListener('mousedown', dragMainPin);
+
+  window.data = {
+    adverts: advertsData,
+  }
 })();
