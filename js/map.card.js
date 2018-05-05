@@ -3,6 +3,7 @@
 (function () {
   var Keycode = {
     ENTER: 13,
+    ESC: 27,
   };
 
   var cardId = null;
@@ -66,6 +67,30 @@
         (num % 10 === 1) && (num % 100 !== 11) ? 'я' : 'ей';
   };
 
+  var onEnterRemoveCard = function (e) {
+    if (e.keyCode === Keycode.ENTER) {
+      removeCard();
+    }
+  };
+
+  var onEscRemoveCard = function (e) {
+    if (e.keyCode === Keycode.ESC) {
+      removeCard();
+    }
+  };
+
+  var onClickRemoveCard = function () {
+    removeCard();
+  };
+
+  var removeCard = function () {
+    var card = window.map.node.querySelector('.map__card');
+
+    document.removeEventListener('keydown', onEscRemoveCard);
+    window.util.removeNodeFromParent(card);
+    window.card.id = null;
+  };
+
   // create pin with template
   var createCard = function (advert, template) {
     var card = template.cloneNode(true);
@@ -94,18 +119,8 @@
 
     var cardClose = card.querySelector('.popup__close');
 
-    var onEnterRemoveCard = function (e) {
-      if (e.keyCode === Keycode.ENTER) {
-        window.util.removeNodeFromParent(card);
-        window.card.id = null;
-      }
-    };
-
-    var onClickRemoveCard = function () {
-      window.util.removeNodeFromParent(card);
-      window.card.id = null;
-    };
-
+    document.removeEventListener('keydown', onEscRemoveCard);
+    document.addEventListener('keydown', onEscRemoveCard);
     cardClose.addEventListener('keydown', onEnterRemoveCard);
     cardClose.addEventListener('click', onClickRemoveCard);
 
