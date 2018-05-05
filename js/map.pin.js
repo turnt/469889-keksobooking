@@ -2,7 +2,7 @@
 
 (function () {
   // ad Y position limits
-  var MainPinLocationYLimits = {
+  var mainPinLocationYLimits = {
     MIN: 150,
     MAX: 500,
   };
@@ -19,9 +19,11 @@
     var pin = template.cloneNode(true);
     var pinImg = pin.querySelector('img');
 
+    var location = advert.location;
+
     pin.advertId = id;
-    pin.style.left = advert.location.x - Math.floor(mapPinSize.WIDTH / 2) + 'px';
-    pin.style.top = advert.location.y - Math.floor(mapPinSize.HEIGHT) + 'px';
+    pin.style.left = location.x - Math.floor(mapPinSize.WIDTH / 2) + 'px';
+    pin.style.top = location.y - mapPinSize.HEIGHT + 'px';
 
     pinImg.src = advert.author.avatar;
     pinImg.alt = advert.offer.title;
@@ -51,7 +53,7 @@
         Math.floor(pin.offsetWidth / 2);
     pinAd.location.y = parseInt(pin.style.top, 10) +
         pin.offsetHeight + 10;
-    pinAd.location.YLimits = MainPinLocationYLimits;
+    pinAd.location.YLimits = mainPinLocationYLimits;
 
     pinAd.offer = {};
     pinAd.offer.address = pinAd.location.x + ', ' +

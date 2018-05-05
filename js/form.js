@@ -193,23 +193,23 @@
     window.backend.load(successHandler, errorHandler);
   };
 
+  var mainPinLocation = function () {
+    var mainPinAnchorHeight = 15;
+
+    mainPin.location.x = parseInt(mainPin.style.left, 10) +
+        Math.floor(mainPin.offsetWidth / 2);
+    mainPin.location.y = parseInt(mainPin.style.top, 10) +
+        mainPin.offsetHeight + mainPinAnchorHeight;
+
+    return mainPin.location.x + ', ' + mainPin.location.y;
+  };
+
   var dragMainPin = function (e) {
     e.preventDefault();
 
     var startCoords = {
       x: e.clientX,
       y: e.clientY,
-    };
-
-    var mainPinLocation = function () {
-      var mainPinAnchorHeight = 15;
-
-      mainPin.location.x = parseInt(mainPin.style.left, 10) +
-          Math.floor(mainPin.offsetWidth / 2);
-      mainPin.location.y = parseInt(mainPin.style.top, 10) +
-          mainPin.offsetHeight + mainPinAnchorHeight;
-
-      return mainPin.location.x + ', ' + mainPin.location.y;
     };
 
     var onMouseMove = function (moveEvt) {
@@ -339,12 +339,14 @@
     adForm.reset();
     disableAdForm(formElementsTypes, adForm);
 
-    mainPin.style.left = mainPinCoordsX;
-    mainPin.style.top = mainPinCoordsY;
+    mainPin.style.left = defaultMainPinCoordX;
+    mainPin.style.top = defaultMainPinCoordY;
+
+    fillFormAddress(adForm, mainPinLocation());
   };
 
   var successHandler = function (adverts) {
-    window.data.adverts = adverts;
+    window.adverts = adverts;
 
     mainPin.removeEventListener('mousedown', enableAdForm);
 
@@ -404,12 +406,12 @@
   var map = window.map.node;
   var mainPin = window.map.mainPin;
 
-  var mainPinCoordsX = mainPin.style.left;
-  var mainPinCoordsY = mainPin.style.top;
+  var defaultMainPinCoordX = mainPin.style.left;
+  var defaultMainPinCoordY = mainPin.style.top;
 
   mainPin.location = {
-    x: mainPinCoordsX,
-    y: mainPinCoordsY,
+    x: defaultMainPinCoordX,
+    y: defaultMainPinCoordY,
   };
 
   // get ad form node
@@ -440,6 +442,8 @@
 
   var advertsData = {};
 
+  fillFormAddress(adForm, mainPinLocation());
+
   // disable it initially
   disableAdForm(formElementsTypes, adForm);
   // fill required attributes for form
@@ -450,7 +454,5 @@
   mainPin.addEventListener('mousedown', enableAdForm);
   mainPin.addEventListener('mousedown', dragMainPin);
 
-  window.data = {
-    adverts: advertsData,
-  };
+  window.adverts = advertsData;
 })();

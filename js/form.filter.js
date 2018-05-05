@@ -11,7 +11,7 @@
   var featuresFilter = pinsFilters.querySelector('.map__features');
 
   var applyFilter = function () {
-    var data = window.data.adverts;
+    var data = window.adverts;
 
     var pins = document.querySelectorAll('.map__pin:not(.map__pin--main)');
 
@@ -72,7 +72,9 @@
     };
 
     var featuresFilterRule = function (arr) {
-      var checkedFeatures = document.querySelectorAll('input[type=checkbox]:checked');
+      var checkedFeatures = document.querySelectorAll(
+          'input[type=checkbox]:checked'
+      );
       var features = [];
 
       var arrayContainsArray = function (sup, sub) {
