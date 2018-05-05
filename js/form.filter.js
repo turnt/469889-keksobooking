@@ -1,6 +1,6 @@
 'use strict';
 
-(function(){
+(function () {
   var DEBOUNCE_INTERVAL = 500;
 
   var pinsFilters = document.querySelector('.map__filters');
@@ -12,7 +12,6 @@
 
   var applyFilter = function () {
     var data = window.data.adverts;
-    var dataFilter;
 
     var pins = document.querySelectorAll('.map__pin:not(.map__pin--main)');
 
@@ -77,7 +76,7 @@
       var features = [];
 
       var arrayContainsArray = function (sup, sub) {
-        if (0 === sub.length) {
+        if (sub.length === 0) {
           return false;
         }
         return sub.every(function (value) {
@@ -89,8 +88,8 @@
         return true;
       }
 
-      for (var i = 0; i < checkedFeatures.length; i++) {
-        features.push(checkedFeatures[i].value);
+      for (var j = 0; j < checkedFeatures.length; j++) {
+        features.push(checkedFeatures[j].value);
       }
 
       return arrayContainsArray(arr.offer.features, features);
@@ -107,14 +106,14 @@
     var card = window.map.node.querySelector('.map__card');
 
     if (card) {
-        window.util.removeNodeFromParent(card);
-        window.card.id = null;
+      window.util.removeNodeFromParent(card);
+      window.card.id = null;
     }
 
     window.pins.render(
         dataFilter,
         window.map.pinTemplate,
-        window.map.pinsNode,
+        window.map.pinsNode
     );
 
     window.pins.fillPinsClickEvents(dataFilter);

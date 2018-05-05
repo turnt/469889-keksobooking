@@ -14,7 +14,7 @@
     xhr.responseType = 'json';
 
     if (oldAlert) {
-      removeNodeFromParent(oldAlert);
+      window.util.removeNodeFromParent(oldAlert);
     }
 
     xhr.addEventListener('load', function () {

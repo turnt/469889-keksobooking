@@ -232,7 +232,7 @@
           return min;
         }
         return value;
-      }
+      };
 
       var pinLocationLimitsY = window.pins.mainPinAd.location.YLimits;
 
@@ -264,7 +264,6 @@
   };
 
   var adValidationRules = function (ctx, type) {
-    var adTitle = ctx.querySelector('input[name=title]')
     var adAddress = ctx.querySelector('input[name=address]');
     var adEstateType = ctx.querySelector('select[name=type]');
     var adPrice = ctx.querySelector('input[name=price]');
@@ -355,7 +354,7 @@
         adverts,
         window.map.pinTemplate,
         window.map.pinsNode,
-        window.pins.maxLength,
+        window.pins.maxLength
     );
 
     window.pins.fillPinsClickEvents(adverts.slice(0, window.pins.maxLength));
@@ -453,5 +452,5 @@
 
   window.data = {
     adverts: advertsData,
-  }
+  };
 })();

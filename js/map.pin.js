@@ -74,7 +74,7 @@
           window.card.render(
               data[window.card.id],
               window.map.cardTemplate,
-              window.map.node,
+              window.map.node
           );
         }
       });
