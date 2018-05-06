@@ -204,6 +204,51 @@
     return mainPin.location.x + ', ' + mainPin.location.y;
   };
 
+  var arrowMove = function (e) {
+    e.preventDefault();
+
+    var SHIFT_SIZE = 5;
+
+    var pinPositionX = mainPin.offsetLeft;
+    var pinPositionY = mainPin.offsetTop;
+
+    switch (event.code) {
+      case 'ArrowDown':
+        pinPositionY += SHIFT_SIZE;
+        break;
+      case 'ArrowUp':
+        pinPositionY -= SHIFT_SIZE;
+        break;
+      case 'ArrowLeft':
+        pinPositionX -= SHIFT_SIZE;
+        break;
+      case 'ArrowRight':
+        pinPositionX += SHIFT_SIZE;
+        break;
+    }
+
+    var checkLimit = function (value, min, max) {
+      if (value >= max) {
+        return max;
+      } else if (value <= min) {
+        return min;
+      }
+      return value;
+    };
+
+    var pinLocationLimitsY = window.pins.mainPinAd.location.YLimits;
+
+    var minX = 0;
+    var maxX = map.clientWidth - mainPin.offsetWidth;
+    var minY = pinLocationLimitsY.MIN - mainPin.offsetHeight;
+    var maxY = pinLocationLimitsY.MAX - mainPin.offsetHeight;
+
+    mainPin.style.left = checkLimit(pinPositionX, minX, maxX) + 'px';
+    mainPin.style.top = checkLimit(pinPositionY, minY, maxY) + 'px';
+
+    fillFormAddress(adForm, mainPinLocation());
+  };
+
   var dragMainPin = function (e) {
     e.preventDefault();
 
@@ -325,6 +370,7 @@
 
     map.classList.add('map--faded');
     mainPin.addEventListener('mousedown', enableAdForm);
+    mainPin.removeEventListener('keydown', arrowMove);
     adForm.classList.add('ad-form--disabled');
 
     if (card) {
@@ -440,6 +486,21 @@
     );
   });
 
+  var onEnterSpace = function (e) {
+    var Keycode = {
+      ENTER: 13,
+      SPACE: 32,
+    };
+
+    if (e.keyCode === Keycode.ENTER || e.keyCode === Keycode.SPACE) {
+      enableAdForm(e);
+      e.currentTarget.removeEventListener('keydow', onEnterSpace);
+    }
+
+    mainPin.removeEventListener('keydown', onEnterSpace);
+    mainPin.addEventListener('keydown', arrowMove);
+  };
+
   var advertsData = {};
 
   fillFormAddress(adForm, mainPinLocation());
@@ -453,6 +514,7 @@
   // init validation for ad form
   adValidationRules(adForm, TypeMinPriceLimit);
 
+  mainPin.addEventListener('keydown', onEnterSpace);
   mainPin.addEventListener('mousedown', enableAdForm);
   mainPin.addEventListener('mousedown', dragMainPin);
 

@@ -138,13 +138,17 @@
     cardCheckInOut.textContent = 'Заезд после ' + advert.offer.checkin +
         ', выезд до ' + advert.offer.checkout;
 
-    advert.offer.description.length > 0 ?
-        cardDescription.textContent = advert.offer.description :
-        window.util.removeNodeFromParent(cardDescription);
+    if (advert.offer.description.length > 0) {
+      cardDescription.textContent = advert.offer.description;
+    } else {
+      window.util.removeNodeFromParent(cardDescription);
+    }
 
-    advert.offer.features.length > 0 ?
-        generateFeatures(cardFeatures, advert.offer.features) :
-        window.util.removeNodeFromParent(cardFeatures);
+    if (advert.offer.features.length > 0) {
+      generateFeatures(cardFeatures, advert.offer.features);
+    } else {
+      window.util.removeNodeFromParent(cardFeatures);
+    }
 
     var photosLength = advert.offer.photos.length;
 
