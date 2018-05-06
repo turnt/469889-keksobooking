@@ -205,24 +205,28 @@
   };
 
   var arrowMove = function (e) {
-    e.preventDefault();
-
     var SHIFT_SIZE = 5;
 
     var pinPositionX = mainPin.offsetLeft;
     var pinPositionY = mainPin.offsetTop;
 
+    console.log(e);
+
     switch (event.code) {
       case 'ArrowDown':
+        e.preventDefault();
         pinPositionY += SHIFT_SIZE;
         break;
       case 'ArrowUp':
+        e.preventDefault();
         pinPositionY -= SHIFT_SIZE;
         break;
       case 'ArrowLeft':
+        e.preventDefault();
         pinPositionX -= SHIFT_SIZE;
         break;
       case 'ArrowRight':
+        e.preventDefault();
         pinPositionX += SHIFT_SIZE;
         break;
     }
@@ -487,12 +491,8 @@
   });
 
   var onEnterSpace = function (e) {
-    var Keycode = {
-      ENTER: 13,
-      SPACE: 32,
-    };
-
-    if (e.keyCode === Keycode.ENTER || e.keyCode === Keycode.SPACE) {
+    if (e.keyCode === window.util.Keycode.ENTER ||
+      e.keyCode === window.util.Keycode.SPACE) {
       enableAdForm(e);
       e.currentTarget.removeEventListener('keydow', onEnterSpace);
     }

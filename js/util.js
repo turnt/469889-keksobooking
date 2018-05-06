@@ -1,6 +1,11 @@
 'use strict';
 
 (function () {
+  var Keycode = {
+    ENTER: 13,
+    ESC: 27,
+    SPACE: 32,
+  };
   // return new shuffled array
   var shuffleArray = function (arr) {
     var shuffledArray = arr.slice();
@@ -64,5 +69,6 @@
     getMultipleRandomArrayItems: getMultipleRandomArrayItems,
     fillStyleFromObject: fillStyleFromObject,
     debounce: debounce,
+    Keycode: Keycode,
   };
 })();

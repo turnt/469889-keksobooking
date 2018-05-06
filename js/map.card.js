@@ -1,11 +1,6 @@
 'use strict';
 
 (function () {
-  var Keycode = {
-    ENTER: 13,
-    ESC: 27,
-  };
-
   var cardId = null;
 
   // return photo for card gallery
@@ -68,13 +63,13 @@
   };
 
   var onEnterRemoveCard = function (e) {
-    if (e.keyCode === Keycode.ENTER) {
+    if (e.keyCode === window.util.Keycode.ENTER) {
       removeCard();
     }
   };
 
   var onEscRemoveCard = function (e) {
-    if (e.keyCode === Keycode.ESC) {
+    if (e.keyCode === window.util.Keycode.ESC) {
       removeCard();
     }
   };
