@@ -2,7 +2,7 @@
 
 (function () {
   // ad Y position limits
-  var MainPinLocationYLimits = {
+  var mainPinLocationYLimits = {
     MIN: 150,
     MAX: 500,
   };
@@ -12,6 +12,8 @@
     HEIGHT: 70,
   };
 
+  var MAIN_PIN_ANCHOR_HEIGHT = 15;
+
   var MAX_NUMBER_OF_PINS = 5;
 
   // create pin with template
@@ -19,9 +21,11 @@
     var pin = template.cloneNode(true);
     var pinImg = pin.querySelector('img');
 
+    var location = advert.location;
+
     pin.advertId = id;
-    pin.style.left = advert.location.x - Math.floor(mapPinSize.WIDTH / 2) + 'px';
-    pin.style.top = advert.location.y - Math.floor(mapPinSize.HEIGHT) + 'px';
+    pin.style.left = location.x - Math.floor(mapPinSize.WIDTH / 2) + 'px';
+    pin.style.top = location.y - mapPinSize.HEIGHT + 'px';
 
     pinImg.src = advert.author.avatar;
     pinImg.alt = advert.offer.title;
@@ -49,9 +53,8 @@
     pinAd.location = {};
     pinAd.location.x = parseInt(pin.style.left, 10) +
         Math.floor(pin.offsetWidth / 2);
-    pinAd.location.y = parseInt(pin.style.top, 10) +
-        pin.offsetHeight + 10;
-    pinAd.location.YLimits = MainPinLocationYLimits;
+    pinAd.location.y = parseInt(pin.style.top, 10) + mainPinHeight;
+    pinAd.location.YLimits = mainPinLocationYLimits;
 
     pinAd.offer = {};
     pinAd.offer.address = pinAd.location.x + ', ' +
@@ -81,11 +84,14 @@
     }
   };
 
+  var mainPinHeight = window.map.mainPin.offsetHeight + MAIN_PIN_ANCHOR_HEIGHT;
+
   var mainPinAd = generateMainPinAd(window.map.mainPin);
 
   window.pins = {
     render: renderPins,
     mainPinAd: mainPinAd,
+    mainPinHeight: mainPinHeight,
     fillPinsClickEvents: fillPinsClickEvents,
     maxLength: MAX_NUMBER_OF_PINS,
   };

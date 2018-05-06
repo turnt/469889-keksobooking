@@ -1,10 +1,6 @@
 'use strict';
 
 (function () {
-  var Keycode = {
-    ENTER: 13,
-  };
-
   var cardId = null;
 
   // return photo for card gallery
@@ -66,6 +62,30 @@
         (num % 10 === 1) && (num % 100 !== 11) ? 'я' : 'ей';
   };
 
+  var onEnterRemoveCard = function (e) {
+    if (e.keyCode === window.util.Keycode.ENTER) {
+      removeCard();
+    }
+  };
+
+  var onEscRemoveCard = function (e) {
+    if (e.keyCode === window.util.Keycode.ESC) {
+      removeCard();
+    }
+  };
+
+  var onClickRemoveCard = function () {
+    removeCard();
+  };
+
+  var removeCard = function () {
+    var card = window.map.node.querySelector('.map__card');
+
+    document.removeEventListener('keydown', onEscRemoveCard);
+    window.util.removeNodeFromParent(card);
+    window.card.id = null;
+  };
+
   // create pin with template
   var createCard = function (advert, template) {
     var card = template.cloneNode(true);
@@ -94,18 +114,8 @@
 
     var cardClose = card.querySelector('.popup__close');
 
-    var onEnterRemoveCard = function (e) {
-      if (e.keyCode === Keycode.ENTER) {
-        window.util.removeNodeFromParent(card);
-        window.card.id = null;
-      }
-    };
-
-    var onClickRemoveCard = function () {
-      window.util.removeNodeFromParent(card);
-      window.card.id = null;
-    };
-
+    document.removeEventListener('keydown', onEscRemoveCard);
+    document.addEventListener('keydown', onEscRemoveCard);
     cardClose.addEventListener('keydown', onEnterRemoveCard);
     cardClose.addEventListener('click', onClickRemoveCard);
 
@@ -123,14 +133,28 @@
     cardCheckInOut.textContent = 'Заезд после ' + advert.offer.checkin +
         ', выезд до ' + advert.offer.checkout;
 
-    cardDescription.textContent = advert.offer.description;
+    if (advert.offer.description.length > 0) {
+      cardDescription.textContent = advert.offer.description;
+    } else {
+      window.util.removeNodeFromParent(cardDescription);
+    }
 
-    generateFeatures(cardFeatures, advert.offer.features);
+    if (advert.offer.features.length > 0) {
+      generateFeatures(cardFeatures, advert.offer.features);
+    } else {
+      window.util.removeNodeFromParent(cardFeatures);
+    }
 
-    for (var i = 0; i < advert.offer.photos.length; i += 1) {
-      cardImages.appendChild(
-          generateCardPhoto(card, '.popup__photo', i, advert.offer)
-      );
+    var photosLength = advert.offer.photos.length;
+
+    if (photosLength > 0) {
+      for (var i = 0; i < photosLength; i += 1) {
+        cardImages.appendChild(
+            generateCardPhoto(card, '.popup__photo', i, advert.offer)
+        );
+      }
+    } else {
+      window.util.removeNodeFromParent(cardImages);
     }
 
     return card;

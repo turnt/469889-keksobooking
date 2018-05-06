@@ -172,7 +172,7 @@
   };
 
   // disable form elements
-  var disableAdForm = function (types, form, reverse) {
+  var disableForm = function (types, form, reverse) {
     for (var i = 0, length = types.length; i < length; i += 1) {
       disableFormElementsByType(form, types[i], reverse);
     }
@@ -182,15 +182,73 @@
   var enableAdForm = function (e) {
     e.preventDefault();
 
+    disableForm(formElementsTypes, window.map.filters, true);
+
     mainPin.initialCoords = {};
     mainPin.initialCoords.x = mainPin.style.left;
     mainPin.initialCoords.y = mainPin.style.top;
 
-    disableAdForm(formElementsTypes, adForm, true);
+    disableForm(formElementsTypes, adForm, true);
     map.classList.remove('map--faded');
     adForm.classList.remove('ad-form--disabled');
 
     window.backend.load(successHandler, errorHandler);
+  };
+
+  var mainPinLocation = function () {
+    mainPin.location.x = parseInt(mainPin.style.left, 10) +
+        Math.floor(mainPin.offsetWidth / 2);
+    mainPin.location.y = parseInt(mainPin.style.top, 10) +
+        mainPin.offsetHeight;
+
+    return mainPin.location.x + ', ' + mainPin.location.y;
+  };
+
+  var arrowMove = function (e) {
+    var SHIFT_SIZE = 5;
+
+    var pinPositionX = mainPin.offsetLeft;
+    var pinPositionY = mainPin.offsetTop;
+
+    switch (event.code) {
+      case 'ArrowDown':
+        e.preventDefault();
+        pinPositionY += SHIFT_SIZE;
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        pinPositionY -= SHIFT_SIZE;
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        pinPositionX -= SHIFT_SIZE;
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        pinPositionX += SHIFT_SIZE;
+        break;
+    }
+
+    var checkLimit = function (value, min, max) {
+      if (value >= max) {
+        return max;
+      } else if (value <= min) {
+        return min;
+      }
+      return value;
+    };
+
+    var pinLocationLimitsY = window.pins.mainPinAd.location.YLimits;
+
+    var minX = 0;
+    var maxX = map.clientWidth - mainPin.offsetWidth;
+    var minY = pinLocationLimitsY.MIN - mainPin.offsetHeight;
+    var maxY = pinLocationLimitsY.MAX - mainPin.offsetHeight;
+
+    mainPin.style.left = checkLimit(pinPositionX, minX, maxX) + 'px';
+    mainPin.style.top = checkLimit(pinPositionY, minY, maxY) + 'px';
+
+    fillFormAddress(adForm, mainPinLocation());
   };
 
   var dragMainPin = function (e) {
@@ -199,17 +257,6 @@
     var startCoords = {
       x: e.clientX,
       y: e.clientY,
-    };
-
-    var mainPinLocation = function () {
-      var mainPinAnchorHeight = 15;
-
-      mainPin.location.x = parseInt(mainPin.style.left, 10) +
-          Math.floor(mainPin.offsetWidth / 2);
-      mainPin.location.y = parseInt(mainPin.style.top, 10) +
-          mainPin.offsetHeight + mainPinAnchorHeight;
-
-      return mainPin.location.x + ', ' + mainPin.location.y;
     };
 
     var onMouseMove = function (moveEvt) {
@@ -317,7 +364,7 @@
     adReset.addEventListener('click', resetForm);
   };
 
-  var resetForm = function (ctx) {
+  var resetForm = function () {
     var adsPins = map.querySelectorAll(
         '.map__pin:not(.map__pin--main)'
     );
@@ -325,7 +372,8 @@
 
     map.classList.add('map--faded');
     mainPin.addEventListener('mousedown', enableAdForm);
-    ctx.classList.add('ad-form--disabled');
+    mainPin.removeEventListener('keydown', arrowMove);
+    adForm.classList.add('ad-form--disabled');
 
     if (card) {
       window.util.removeNodeFromParent(card);
@@ -337,14 +385,16 @@
     }
 
     adForm.reset();
-    disableAdForm(formElementsTypes, ctx);
+    disableForm(formElementsTypes, adForm);
 
-    mainPin.style.left = mainPinCoordsX;
-    mainPin.style.top = mainPinCoordsY;
+    mainPin.style.left = defaultMainPinCoordX;
+    mainPin.style.top = defaultMainPinCoordY;
+
+    fillFormAddress(adForm, mainPinLocation());
   };
 
   var successHandler = function (adverts) {
-    window.data.adverts = adverts;
+    window.adverts = adverts;
 
     mainPin.removeEventListener('mousedown', enableAdForm);
 
@@ -404,12 +454,12 @@
   var map = window.map.node;
   var mainPin = window.map.mainPin;
 
-  var mainPinCoordsX = mainPin.style.left;
-  var mainPinCoordsY = mainPin.style.top;
+  var defaultMainPinCoordX = mainPin.style.left;
+  var defaultMainPinCoordY = mainPin.style.top;
 
   mainPin.location = {
-    x: mainPinCoordsX,
-    y: mainPinCoordsY,
+    x: defaultMainPinCoordX,
+    y: defaultMainPinCoordY,
   };
 
   // get ad form node
@@ -438,19 +488,33 @@
     );
   });
 
+  var onEnterSpace = function (e) {
+    if (e.keyCode === window.util.Keycode.ENTER ||
+      e.keyCode === window.util.Keycode.SPACE) {
+      enableAdForm(e);
+      e.currentTarget.removeEventListener('keydow', onEnterSpace);
+    }
+
+    mainPin.removeEventListener('keydown', onEnterSpace);
+    mainPin.addEventListener('keydown', arrowMove);
+  };
+
   var advertsData = {};
 
+  fillFormAddress(adForm, mainPinLocation());
+
+  disableForm(formElementsTypes, window.map.filters);
+
   // disable it initially
-  disableAdForm(formElementsTypes, adForm);
+  disableForm(formElementsTypes, adForm);
   // fill required attributes for form
   requiredFormElementsByType(adForm, requiredControls);
   // init validation for ad form
   adValidationRules(adForm, TypeMinPriceLimit);
 
+  mainPin.addEventListener('keydown', onEnterSpace);
   mainPin.addEventListener('mousedown', enableAdForm);
   mainPin.addEventListener('mousedown', dragMainPin);
 
-  window.data = {
-    adverts: advertsData,
-  };
+  window.adverts = advertsData;
 })();
