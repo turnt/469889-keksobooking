@@ -210,8 +210,6 @@
     var pinPositionX = mainPin.offsetLeft;
     var pinPositionY = mainPin.offsetTop;
 
-    console.log(e);
-
     switch (event.code) {
       case 'ArrowDown':
         e.preventDefault();
