@@ -20,6 +20,9 @@
     BUNGALO: 0,
   };
 
+  // submit validation flag
+  var checkOnSubmit = false;
+
   // recieve array of required elements
   var requiredControls = formElementsTypes.filter(function (value) {
     return value !== 'textarea' &&
@@ -53,21 +56,34 @@
     ctx.setCustomValidity(errorMsg);
   };
 
-  // price validation rule
-  var validatePrice = function (priceNode) {
-    var errorMsg = '';
+  // set validation message by rule
+  var validateOnSubmitTry = function (ctx, rule, msg) {
+    if (rule && checkOnSubmit) {
+      setValidationMsg(ctx, msg);
+      ctx.style.outline = '2px solid #F00';
+    } else {
+      setValidationMsg(ctx, msg);
+      ctx.style.outline = 'inherit';
+    }
+  };
 
-    if (priceNode.value) {
-      var tooSmall = +priceNode.value < priceNode.min;
-      var tooBig = +priceNode.value > priceNode.max;
+  // price validation rule
+  var validatePrice = function (ctx) {
+    var errorMsg = '';
+    var hasError = false;
+
+    if (ctx.value && ctx.value !== '') {
+      var tooSmall = +ctx.value < ctx.min;
+      var tooBig = +ctx.value > ctx.max;
 
       if (tooSmall || tooBig) {
+        hasError = true;
         errorMsg = 'Цена должна быть от ' +
-            priceNode.min + ' до ' + priceNode.max + '₽';
+            ctx.min + ' до ' + ctx.max + '₽';
       }
     }
 
-    setValidationMsg(priceNode, errorMsg);
+    validateOnSubmitTry(ctx, hasError || ctx.value === '', errorMsg);
   };
 
   var priceMinimum = function (ctx, min) {
@@ -76,34 +92,11 @@
   };
 
   // validate time in and out by time
-  var validateTimeInOut = function (ctx, time) {
-    var errorMsg = '';
-    var chosenOption = ctx.querySelector('option[value="' + ctx.value + '"]');
-
-    disableTimeOutChildNodes(ctx, time);
-
-    if (chosenOption.disabled) {
-      errorMsg = 'Время выезда должно быть равно или позднее заезда';
-    }
-
-    setValidationMsg(ctx, errorMsg);
-  };
-
-  // disable time out options by value
-  var disableTimeOutChildNodes = function (ctx, value) {
-    var children = ctx.querySelectorAll('option');
-
-    for (var i = 0, length = children.length; i < length; i += 1) {
-      timeOutDisabledRule(children[i], value);
-    }
-  };
-
-  // time out rule for disabled options
-  var timeOutDisabledRule = function (ctx, value) {
-    if (ctx.value < value) {
-      ctx.disabled = true;
-    } else {
-      ctx.disabled = false;
+  var validateTimeInOut = function (ctx, dependentNode) {
+    for (var i = 0; i < dependentNode.options.length; i += 1) {
+      if (dependentNode.options[i].value === ctx.value) {
+        dependentNode.selectedIndex = i;
+      }
     }
   };
 
@@ -136,22 +129,30 @@
   // validate capacity by value
   var validateCapacity = function (ctx, value) {
     var errorMsg = '';
+    var hasError = false;
     var chosenOption = ctx.querySelector('option[value="' + ctx.value + '"]');
 
     disableCapacityChildNodes(ctx, value);
 
     if (chosenOption.disabled) {
+      hasError = true;
       errorMsg = 'Неподходящее количество гостей';
     }
 
-    setValidationMsg(ctx, errorMsg);
+    validateOnSubmitTry(ctx, hasError, errorMsg);
   };
 
-  // fill form address
-  var fillFormAddress = function (ctx, address) {
-    var addressInput = ctx.querySelector('input[name=address]');
+  var validateTitle = function (ctx) {
+    var errorMsg = '';
+    var hasError = false;
 
-    addressInput.value = address;
+    if (ctx.value.length < ctx.minLength || ctx.value.length > ctx.maxLength) {
+      hasError = true;
+      errorMsg = 'Длина заголовка должна быть от ' +
+          ctx.minLength + ' до ' + ctx.maxLength + ' символов';
+    }
+
+    validateOnSubmitTry(ctx, hasError, errorMsg);
   };
 
   // add disabled attribute for collection
@@ -178,139 +179,9 @@
     }
   };
 
-  // enable form elements
-  var enableAdForm = function (e) {
-    e.preventDefault();
-
-    disableForm(formElementsTypes, window.map.filters, true);
-
-    mainPin.initialCoords = {};
-    mainPin.initialCoords.x = mainPin.style.left;
-    mainPin.initialCoords.y = mainPin.style.top;
-
-    disableForm(formElementsTypes, adForm, true);
-    map.classList.remove('map--faded');
-    adForm.classList.remove('ad-form--disabled');
-
-    window.backend.load(successHandler, errorHandler);
-  };
-
-  var mainPinLocation = function () {
-    mainPin.location.x = parseInt(mainPin.style.left, 10) +
-        Math.floor(mainPin.offsetWidth / 2);
-    mainPin.location.y = parseInt(mainPin.style.top, 10) +
-        mainPin.offsetHeight;
-
-    return mainPin.location.x + ', ' + mainPin.location.y;
-  };
-
-  var arrowMove = function (e) {
-    var SHIFT_SIZE = 5;
-
-    var pinPositionX = mainPin.offsetLeft;
-    var pinPositionY = mainPin.offsetTop;
-
-    switch (event.code) {
-      case 'ArrowDown':
-        e.preventDefault();
-        pinPositionY += SHIFT_SIZE;
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        pinPositionY -= SHIFT_SIZE;
-        break;
-      case 'ArrowLeft':
-        e.preventDefault();
-        pinPositionX -= SHIFT_SIZE;
-        break;
-      case 'ArrowRight':
-        e.preventDefault();
-        pinPositionX += SHIFT_SIZE;
-        break;
-    }
-
-    var checkLimit = function (value, min, max) {
-      if (value >= max) {
-        return max;
-      } else if (value <= min) {
-        return min;
-      }
-      return value;
-    };
-
-    var pinLocationLimitsY = window.pins.mainPinAd.location.YLimits;
-
-    var minX = 0;
-    var maxX = map.clientWidth - mainPin.offsetWidth;
-    var minY = pinLocationLimitsY.MIN - mainPin.offsetHeight;
-    var maxY = pinLocationLimitsY.MAX - mainPin.offsetHeight;
-
-    mainPin.style.left = checkLimit(pinPositionX, minX, maxX) + 'px';
-    mainPin.style.top = checkLimit(pinPositionY, minY, maxY) + 'px';
-
-    fillFormAddress(adForm, mainPinLocation());
-  };
-
-  var dragMainPin = function (e) {
-    e.preventDefault();
-
-    var startCoords = {
-      x: e.clientX,
-      y: e.clientY,
-    };
-
-    var onMouseMove = function (moveEvt) {
-      moveEvt.preventDefault();
-
-      var shift = {
-        x: startCoords.x - moveEvt.clientX,
-        y: startCoords.y - moveEvt.clientY
-      };
-
-      startCoords = {
-        x: moveEvt.clientX,
-        y: moveEvt.clientY
-      };
-
-      var checkLimit = function (value, min, max) {
-        if (value >= max) {
-          return max;
-        } else if (value <= min) {
-          return min;
-        }
-        return value;
-      };
-
-      var pinLocationLimitsY = window.pins.mainPinAd.location.YLimits;
-
-      var minX = 0;
-      var maxX = map.clientWidth - mainPin.offsetWidth;
-      var minY = pinLocationLimitsY.MIN - mainPin.offsetHeight;
-      var maxY = pinLocationLimitsY.MAX - mainPin.offsetHeight;
-
-      var pinPositionX = mainPin.offsetLeft - shift.x;
-      var pinPositionY = mainPin.offsetTop - shift.y;
-
-      mainPin.style.left = checkLimit(pinPositionX, minX, maxX) + 'px';
-      mainPin.style.top = checkLimit(pinPositionY, minY, maxY) + 'px';
-
-      fillFormAddress(adForm, mainPinLocation());
-    };
-
-    var onMouseUp = function (upEvt) {
-      upEvt.preventDefault();
-
-      fillFormAddress(adForm, mainPinLocation());
-
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  };
-
+  // fill validation rules for form
   var adValidationRules = function (ctx, type) {
+    var adTitle = ctx.querySelector('input[name=title]');
     var adAddress = ctx.querySelector('input[name=address]');
     var adEstateType = ctx.querySelector('select[name=type]');
     var adPrice = ctx.querySelector('input[name=price]');
@@ -318,14 +189,26 @@
     var adTimeOut = ctx.querySelector('select[name=timeout]');
     var adRooms = ctx.querySelector('select[name=rooms]');
     var adCapacity = ctx.querySelector('select[name=capacity]');
+    var adSubmit = ctx.querySelector('button[type=submit]');
     var adReset = ctx.querySelector('button[type=reset]');
+
+    var checkFormElements = function () {
+      checkOnSubmit = true;
+      validateTitle(adTitle);
+      validatePrice(adPrice);
+      validateCapacity(adCapacity, +adRooms.value);
+    };
 
     // initial validation rules
     priceMinimum(adPrice, type[adEstateType.value.toUpperCase()]);
-    disableTimeOutChildNodes(adTimeOut, adTimeIn.value);
+    // disableTimeOutChildNodes(adTimeOut, adTimeIn.value);
     disableCapacityChildNodes(adCapacity, +adRooms.value);
 
-    // force usage of map coordinates of readonly doesn't work
+    adTitle.addEventListener('input', function (e) {
+      validateTitle(e.target);
+    });
+
+    // force usage of map coordinates if readonly doesn't work
     adAddress.addEventListener('input', function (e) {
       e.target.value = window.pins.mainPinAd.offer.address;
     });
@@ -343,12 +226,12 @@
 
     // time out validation if time in changed
     adTimeIn.addEventListener('change', function (e) {
-      validateTimeInOut(adTimeOut, e.target.value);
+      validateTimeInOut(e.target, adTimeOut);
     });
 
     // time out validation
     adTimeOut.addEventListener('change', function (e) {
-      validateTimeInOut(e.target, adTimeIn.value);
+      validateTimeInOut(e.target, adTimeIn);
     });
 
     // capacity validation if number of rooms changed
@@ -361,160 +244,109 @@
       validateCapacity(e.target, +adRooms.value);
     });
 
+    // reset form
     adReset.addEventListener('click', resetForm);
+
+    adSubmit.addEventListener('click', checkFormElements);
   };
 
+  // reset ad form
   var resetForm = function () {
+    var map = window.map.node;
     var adsPins = map.querySelectorAll(
         '.map__pin:not(.map__pin--main)'
     );
     var card = map.querySelector('.map__card');
 
     map.classList.add('map--faded');
-    mainPin.addEventListener('mousedown', enableAdForm);
-    mainPin.removeEventListener('keydown', arrowMove);
+    window.pins.mainPin.addEventListener(
+        'mousedown',
+        window.pins.enableAdForm
+    );
+    window.pins.mainPin.removeEventListener('keydown', window.pins.arrowMove);
     adForm.classList.add('ad-form--disabled');
 
+    checkOnSubmit = false;
+    var adTitle = adForm.querySelector('input[name=title]');
+    adTitle.style = '';
+    var adPrice = adForm.querySelector('input[name=price]');
+    adPrice.style = '';
+    var adCapacity = adForm.querySelector('select[name=capacity]');
+    adCapacity.style = '';
+
+    // remove card
     if (card) {
       window.util.removeNodeFromParent(card);
       window.card.id = null;
     }
 
+    // remove pins
     for (var i = 0; i < adsPins.length; i += 1) {
       window.util.removeNodeFromParent(adsPins[i]);
     }
 
+    // drop values to initial
     adForm.reset();
+    // enable all form elements
     disableForm(formElementsTypes, adForm);
+    // reset validation rules
+    adValidationRules(adForm, TypeMinPriceLimit);
 
-    mainPin.style.left = defaultMainPinCoordX;
-    mainPin.style.top = defaultMainPinCoordY;
+    window.pins.resetMainPinPosition();
 
-    fillFormAddress(adForm, mainPinLocation());
+    window.pins.fillFormAddress(adForm, window.pins.mainPinLocation());
   };
 
-  var successHandler = function (adverts) {
-    window.adverts = adverts;
+  // success send form
+  var successSendHandler = function () {
+    var successMessage = document.querySelector('.success');
+    var successMessageVisibilityDuration = 1500;
 
-    mainPin.removeEventListener('mousedown', enableAdForm);
+    // drop submit validation flag
+    checkOnSubmit = false;
 
-    window.filter();
+    successMessage.classList.remove('hidden');
+    resetForm(adForm);
 
-    window.pins.render(
-        adverts,
-        window.map.pinTemplate,
-        window.map.pinsNode,
-        window.pins.maxLength
+    setTimeout(
+        function () {
+          successMessage.classList.add('hidden');
+        },
+        successMessageVisibilityDuration
     );
-
-    window.pins.fillPinsClickEvents(adverts.slice(0, window.pins.maxLength));
-  };
-
-  var errorHandler = function (errorMsg) {
-    var alert = document.createElement('div');
-    var alertStyle = {
-      position: 'fixed',
-      top: '0',
-      left: '0',
-      zIndex: 100,
-      fontSize: '24px',
-      color: 'red',
-      textAlign: 'center',
-      width: '100%',
-      padding: '2vh 0',
-      backgroundColor: '#fff',
-      boxShadow: '0 2px 4px 2px rgba(0, 0, 0, 0.4)',
-    };
-
-    var alertClose = document.createElement('button');
-    var alertCloseStyle = {
-      position: 'absolute',
-      top: '6px',
-      right: '5vw',
-      fontSize: '16px',
-      color: '#000',
-      padding: '5px 10px',
-    };
-
-    alertClose.textContent = 'Закрыть';
-    alertClose.addEventListener('click', function () {
-      var alertNode = document.querySelector('#system-alert');
-      window.util.removeNodeFromParent(alertNode);
-    });
-
-    window.util.fillStyleFromObject(alert.style, alertStyle);
-    window.util.fillStyleFromObject(alertClose.style, alertCloseStyle);
-
-    alert.textContent = errorMsg;
-    alert.id = 'system-alert';
-    alert.appendChild(alertClose);
-    document.body.insertAdjacentElement('beforeend', alert);
-  };
-
-  var map = window.map.node;
-  var mainPin = window.map.mainPin;
-
-  var defaultMainPinCoordX = mainPin.style.left;
-  var defaultMainPinCoordY = mainPin.style.top;
-
-  mainPin.location = {
-    x: defaultMainPinCoordX,
-    y: defaultMainPinCoordY,
   };
 
   // get ad form node
   var adForm = document.querySelector('.ad-form');
 
+  // form submit
   adForm.addEventListener('submit', function (e) {
     e.preventDefault();
 
     window.backend.save(
         new FormData(adForm),
-        function () {
-          var successMessage = document.querySelector('.success');
-          var successMessageVisibilityDuration = 1500;
-
-          successMessage.classList.remove('hidden');
-          resetForm(adForm);
-
-          setTimeout(
-              function () {
-                successMessage.classList.add('hidden');
-              },
-              successMessageVisibilityDuration
-          );
-        },
-        errorHandler
+        successSendHandler,
+        window.util.errorHandler
     );
   });
 
-  var onEnterSpace = function (e) {
-    if (e.keyCode === window.util.Keycode.ENTER ||
-      e.keyCode === window.util.Keycode.SPACE) {
-      enableAdForm(e);
-      e.currentTarget.removeEventListener('keydow', onEnterSpace);
-    }
+  window.pins.fillFormAddress(
+      adForm,
+      window.pins.mainPinLocation()
+  );
 
-    mainPin.removeEventListener('keydown', onEnterSpace);
-    mainPin.addEventListener('keydown', arrowMove);
-  };
-
-  var advertsData = {};
-
-  fillFormAddress(adForm, mainPinLocation());
-
+  // disable filter elements
   disableForm(formElementsTypes, window.map.filters);
-
-  // disable it initially
+  // disable ad form initially
   disableForm(formElementsTypes, adForm);
   // fill required attributes for form
   requiredFormElementsByType(adForm, requiredControls);
   // init validation for ad form
   adValidationRules(adForm, TypeMinPriceLimit);
 
-  mainPin.addEventListener('keydown', onEnterSpace);
-  mainPin.addEventListener('mousedown', enableAdForm);
-  mainPin.addEventListener('mousedown', dragMainPin);
-
-  window.adverts = advertsData;
+  window.adForm = {
+    node: adForm,
+    disableForm: disableForm,
+    formElementsTypes: formElementsTypes,
+  };
 })();

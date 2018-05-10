@@ -64,11 +64,53 @@
     };
   };
 
+  var errorHandler = function (errorMsg) {
+    var alert = document.createElement('div');
+    var alertStyle = {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      zIndex: 100,
+      fontSize: '24px',
+      color: 'red',
+      textAlign: 'center',
+      width: '100%',
+      padding: '2vh 0',
+      backgroundColor: '#fff',
+      boxShadow: '0 2px 4px 2px rgba(0, 0, 0, 0.4)',
+    };
+
+    var alertClose = document.createElement('button');
+    var alertCloseStyle = {
+      position: 'absolute',
+      top: '6px',
+      right: '5vw',
+      fontSize: '16px',
+      color: '#000',
+      padding: '5px 10px',
+    };
+
+    alertClose.textContent = 'Закрыть';
+    alertClose.addEventListener('click', function () {
+      var alertNode = document.querySelector('#system-alert');
+      window.util.removeNodeFromParent(alertNode);
+    });
+
+    window.util.fillStyleFromObject(alert.style, alertStyle);
+    window.util.fillStyleFromObject(alertClose.style, alertCloseStyle);
+
+    alert.textContent = errorMsg;
+    alert.id = 'system-alert';
+    alert.appendChild(alertClose);
+    document.body.insertAdjacentElement('beforeend', alert);
+  };
+
   window.util = {
     removeNodeFromParent: removeNodeFromParent,
     getMultipleRandomArrayItems: getMultipleRandomArrayItems,
     fillStyleFromObject: fillStyleFromObject,
     debounce: debounce,
     Keycode: Keycode,
+    errorHandler: errorHandler,
   };
 })();

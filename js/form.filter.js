@@ -11,7 +11,7 @@
   var featuresFilter = pinsFilters.querySelector('.map__features');
 
   var applyFilter = function () {
-    var data = window.adverts;
+    var data = window.pins.adverts;
 
     var pins = document.querySelectorAll('.map__pin:not(.map__pin--main)');
 
